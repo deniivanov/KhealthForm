@@ -35,7 +35,7 @@ const ProductOrderForm = () => {
             name: "Горнище от комплект Gold",
             color: "Бял",
             price: 60.00,
-            image: "/gornishte.png",
+            image: "/gornishte.webp",
             sizes: ['116-122', '128-134', '140-146', '152-158', '164-170', 'XS', 'S','M']
         },
         {
@@ -43,7 +43,7 @@ const ProductOrderForm = () => {
             name: "Долнище от комплект Gold",
             color: "Бял",
             price: 60.00,
-            image: "/dolnishte.png",
+            image: "/dolnishte.webp",
             sizes: ['116-122', '128-134', '140-146', '152-158', '164-170', 'XS', 'S','M']
         }
     ];
