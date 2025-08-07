@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import axios from 'axios';
 
@@ -9,6 +9,25 @@ const ProductOrderForm = () => {
     const [customerName, setCustomerName] = useState('');
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orderSuccess, setOrderSuccess] = useState(null);
+    const [countdown, setCountdown] = useState(15);
+
+    useEffect(() => {
+        let timer;
+        if (orderSuccess) {
+            timer = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        window.location.reload();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [orderSuccess]);
 
     const products = [
         {
@@ -27,7 +46,7 @@ const ProductOrderForm = () => {
             image: "/dolnishte.png",
             sizes: ['116-122', '128-134', '140-146', '152-158', '164-170', 'XS', 'S','M']
         }
-    ]
+    ];
 
     const handleProductSelect = (productId, isSelected) => {
         if (isSelected) {
@@ -93,13 +112,8 @@ const ProductOrderForm = () => {
         };
 
         try {
-            // First, let's test the webhook URL
-            console.log('Sending order data:', orderData);
-
-            // Let's try different URL formats to see which one works
             const baseUrl = 'https://n8n.bumpbots.com';
             const webhookId = '62e33cf2-b187-44c6-baee-5b4f3c821c48';
-
 
             const urlsToTry = [
                 `${baseUrl}/webhook-test/${webhookId}`,
@@ -109,15 +123,11 @@ const ProductOrderForm = () => {
                 `${baseUrl}/webhook/${webhookId}/`
             ];
 
-            console.log('Trying webhook URLs:', urlsToTry);
-
-            // Try the original URL first
             let response;
             let successUrl;
 
             for (const url of urlsToTry) {
                 try {
-                    console.log(`Trying URL: ${url}`);
                     response = await axios.post(url, orderData, {
                         headers: {
                             'Content-Type': 'application/json',
@@ -129,11 +139,9 @@ const ProductOrderForm = () => {
 
                     if (response.status === 200) {
                         successUrl = url;
-                        console.log(`Success with URL: ${url}`);
                         break;
                     }
                 } catch (urlError) {
-                    console.log(`Failed with URL ${url}:`, urlError.response?.status || urlError.message);
                     continue;
                 }
             }
@@ -142,34 +150,54 @@ const ProductOrderForm = () => {
                 throw new Error('Всички webhook URL-та не работят');
             }
 
-            console.log('Successful response:', response.data);
-            console.log('Working URL was:', successUrl);
-            alert(`Поръчката е направена успешно! ${response.data?.message || ''}\nURL: ${successUrl}`);
+            setOrderSuccess({
+                orderId: response.data?.orderId || Math.floor(Math.random() * 100000),
+                customerName,
+                productCount: Object.keys(selectedProducts).length,
+                estimatedDelivery: response.data?.estimatedDelivery || '2-5 работни дни'
+            });
 
-            // Reset form
             setSelectedProducts({});
             setCustomerName('');
             setAdditionalInfo('');
-
         } catch (error) {
-            console.error('Full error object:', error);
-            console.error('Error response:', error.response);
-
+            console.error('Error submitting order:', error);
             let errorMessage = 'Възникна грешка при изпращането на поръчката.';
-
             if (error.message === 'Всички webhook URL-та не работят') {
                 errorMessage = 'Webhook-ът не е достъпен. Моля проверете дали n8n workflow-ът е активен и дали URL-то е правилно.';
-            } else if (error.response?.status === 404) {
-                errorMessage = 'Webhook URL не е намерен (404). Моля проверете n8n настройките.';
-            } else if (error.response?.status === 405) {
-                errorMessage = 'Неправилен HTTP метод (405). Webhook-ът може да очаква GET вместо POST заявка.';
             }
-
             alert(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    // ✅ Success View
+    if (orderSuccess) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 text-green-900 p-6">
+                <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg p-10 border border-green-200">
+                    <div className="flex items-center justify-center mb-6">
+                        <div className="bg-green-500 p-4 rounded-full">
+                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h2 className="text-2xl font-bold text-center mb-4">Поръчката е потвърдена!</h2>
+                    <p className="text-center text-green-700 mb-2">Благодарим ви, <strong>{orderSuccess.customerName}</strong>!</p>
+                    <div className="text-center space-y-2">
+                        <p>Номер на поръчка: <span className="font-mono bg-green-100 px-2 py-1 rounded">{orderSuccess.orderId}</span></p>
+                        <p>{orderSuccess.productCount} продукт{orderSuccess.productCount !== 1 ? 'а' : ''}</p>
+                        <p className="text-sm text-green-500 mt-4">Страницата ще се презареди автоматично след {countdown} секунди...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 🧠 The rest of your original JSX goes here unchanged...
+    // You can paste the full JSX section you had previously here as-is.
 
     return (
         <div className="max-w-8xl mx-auto p-6 bg-slate-50 min-h-screen">
@@ -322,10 +350,23 @@ const ProductOrderForm = () => {
 
                         <button
                             onClick={handleSubmit}
-                            disabled={isSubmitting}
-                            className="w-full bg-yellow-400 text-slate-800 py-4 px-6 rounded-lg font-bold text-lg hover:bg-yellow-500 hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-yellow-300 shadow-md disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
+                            disabled={isSubmitting || orderSuccess}
+                            className={`w-full py-4 px-6 rounded-lg font-bold text-lg transition-all duration-200 focus:outline-none shadow-md flex items-center justify-center ${
+                                orderSuccess
+                                    ? 'bg-green-500 text-white cursor-default'
+                                    : isSubmitting
+                                    ? 'bg-yellow-400 text-slate-800 opacity-70 cursor-not-allowed'
+                                    : 'bg-yellow-400 text-slate-800 hover:bg-yellow-500 hover:shadow-lg transform hover:-translate-y-1 focus:ring-4 focus:ring-yellow-300'
+                            }`}
                         >
-                            {isSubmitting ? (
+                            {orderSuccess ? (
+                                <>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                    Поръчката е успешна! ({countdown}s)
+                                </>
+                            ) : isSubmitting ? (
                                 <>
                                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-800 mr-3"></div>
                                     Обработване на поръчката...
@@ -334,6 +375,40 @@ const ProductOrderForm = () => {
                                 'Поръчай'
                             )}
                         </button>
+
+                        {/* Order Success Details */}
+                        {orderSuccess && (
+                            <div className="mt-6 p-6 bg-green-50 border-2 border-green-200 rounded-xl">
+                                <div className="flex items-center justify-center mb-4">
+                                    <div className="bg-green-500 rounded-full p-3 mr-4">
+                                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-green-800">Поръчката е потвърдена!</h3>
+                                </div>
+
+                                <div className="space-y-3 text-center">
+                                    <p className="text-lg font-semibold text-green-700">
+                                        Номер на поръчка: <span className="font-mono bg-green-100 px-2 py-1 rounded">{orderSuccess.orderId}</span>
+                                    </p>
+                                    <p className="text-green-600">
+                                        Благодарим ви, <strong>{orderSuccess.customerName}</strong>!
+                                    </p>
+                                    <p className="text-green-600">
+                                        {orderSuccess.productCount} продукт{orderSuccess.productCount !== 1 ? 'а' : ''}
+                                    </p>
+                                    {orderSuccess.estimatedDelivery && (
+                                        <p className="text-green-600">
+                                            Очаквана доставка: <strong>{orderSuccess.estimatedDelivery}</strong>
+                                        </p>
+                                    )}
+                                    <p className="text-sm text-green-500 mt-4">
+                                        Страницата ще се презареди автоматично след {countdown} секунди
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -371,3 +446,4 @@ const ProductOrderForm = () => {
 };
 
 export default ProductOrderForm;
+
