@@ -1577,7 +1577,7 @@ const ProductSizeSummary = () => {
                 }
 
                 // Count each customer order as 1 unit per size (ignore quantity field)
-                summary[productName][size] += 1;
+                summary[productName][size] += product.quantity;
             });
         });
 
