@@ -1742,7 +1742,7 @@ const ProductSizeSummary = () => {
                                             .map(([size, total]) => (
                                                 <div key={size} className="flex justify-between items-center">
                                                     <span className="text-gray-700">{size}</span>
-                                                    <span className="font-semibold text-blue-600">{total} клиента</span>
+                                                    <span className="font-semibold text-blue-600">{total} поръчани продукта</span>
                                                 </div>
                                             ))
                                         }
@@ -1755,7 +1755,7 @@ const ProductSizeSummary = () => {
                                         {Object.entries(productTotals).map(([product, total]) => (
                                             <div key={product} className="flex justify-between items-center">
                                                 <span className="text-gray-700 text-sm">{product}</span>
-                                                <span className="font-semibold text-green-600">{total} клиента</span>
+                                                <span className="font-semibold text-green-600">{total} поръчани продукта</span>
                                             </div>
                                         ))}
                                     </div>
