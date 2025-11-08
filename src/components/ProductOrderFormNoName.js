@@ -48,14 +48,14 @@ const ProductOrderFormNoName = () => {
             sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M'] },
         { id: 5, name: "Клин KHealth дълъг", color: "Черен", price: 49.00, image: "https://ik.imagekit.io/brandbeam/bilyana-5.jpg",
             sizes: ['128-134','140-146','152-158','164-170','XS','S','M'] },
-        { id: 6, name: "Потник Биляна", color: "Бял", price: 39.00, image: "https://ik.imagekit.io/brandbeam/bilyana-6.jpg",
-            sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M'] },
+        { id: 6, name: "Блуза", color: "Черен", price: 39.00, image: "https://ik.imagekit.io/brandbeam/bilyana-11.jpg",
+            sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
         { id: 7, name: "Клин KHealth къс", color: "Черно", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-8.jpg",
             sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M'] },
         { id: 8, name: "Тениска Биляна Памук", color: "Цикламено", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-7.jpg",
             sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M'] },
-        { id: 9, name: "Потник Биляна", color: "Черен", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-10.jpg",
-            sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M'] },
+        { id: 9, name: "Суичър Кхеалтх", color: "Розов", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-12.jpg",
+            sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
         { id: 10, name: "Долнище Khealth", color: "Черно", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-9.jpg",
             sizes: ['116-122','128-134','140-146','152-158','164-170','XS','S','M'] }
     ];
