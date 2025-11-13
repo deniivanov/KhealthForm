@@ -35,8 +35,6 @@ const ProductOrderFormNoName = () => {
         }
         return () => clearInterval(timer);
     }, [orderSuccess]);
-
-    // ====== Catalog (7 items) ======
     const products = [
         { id: 1, name: "Тениска Биляна Сублимация", color: "Черен", price: 60.00, image: "https://ik.imagekit.io/brandbeam/bilyana-1.jpg",
             sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },

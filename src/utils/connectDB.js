@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 mongoose.set('debug', true); // Enable debug mode for queries
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = 'mongodb+srv://doadmin:6XfQ8xh92C315ew0@mongo-docean-1-401b1b9e.mongo.ondigitalocean.com/khealth'
 
 if (!MONGODB_URI) {
     throw new Error('Please define the MONGODB_URI environment variable in .env.local');
@@ -26,7 +26,7 @@ async function connectDB() {
             tls: true,
             tlsAllowInvalidCertificates: true, // For debugging only, remove in production
             authSource: 'admin',
-            dbName: 'usmivko',
+            dbName: 'khealth',
             bufferCommands: false,
             useNewUrlParser: true,
             useUnifiedTopology: true,
