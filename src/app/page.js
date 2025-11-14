@@ -1,4 +1,5 @@
 import ProductOrderFormNoName from "@/components/ProductOrderFormNoName";
+import MaintenancePage from "@/components/MaintenancePage";
 // Normalize: "eva" -> "Eva", "john-doe" -> "John Doe", "ivan_ivanov" -> "Ivan Ivanov"
 function normalizeName(raw) {
     try {
@@ -15,5 +16,5 @@ function normalizeName(raw) {
 
 export default function TrainerNamePage({ params }) {
     const name = normalizeName(params?.name);
-    return <ProductOrderFormNoName />;
+    return <MaintenancePage />;
 }
