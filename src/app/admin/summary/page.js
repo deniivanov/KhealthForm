@@ -41,27 +41,24 @@ const ProductSizeSummary = () => {
 
     const summaryData = useMemo(() => {
         const summary = {};
-        const colorMap = {}; // Store color for each product
 
         ordersData.forEach(order => {
             order.products.forEach(product => {
                 const name = product.name;
                 const size = product.size;
                 const qty = product.quantity || 1;
-                const color = product.color;
+                const color = product.color || 'N/A';
 
-                if (!summary[name]) summary[name] = {};
-                if (!summary[name][size]) summary[name][size] = 0;
+                // Create a unique key combining name and color
+                const productKey = `${name} (${color})`;
 
-                summary[name][size] += qty;
+                if (!summary[productKey]) summary[productKey] = {};
+                if (!summary[productKey][size]) summary[productKey][size] = 0;
 
-                // Store color for this product name
-                if (!colorMap[name] && color) {
-                    colorMap[name] = color;
-                }
+                summary[productKey][size] += qty;
             });
         });
-        return { summary, colorMap };
+        return { summary };
     }, [ordersData]);
 
     const allSizes = useMemo(() => {
@@ -82,9 +79,12 @@ const ProductSizeSummary = () => {
     const productNames = useMemo(() => {
         const products = new Set();
         ordersData.forEach(order => {
-            order.products.forEach(p => products.add(p.name));
+            order.products.forEach(p => {
+                const productKey = `${p.name} (${p.color || 'N/A'})`;
+                products.add(productKey);
+            });
         });
-        return Array.from(products);
+        return Array.from(products).sort();
     }, [ordersData]);
 
     const sizeTotals = useMemo(() => {
@@ -110,25 +110,20 @@ const ProductSizeSummary = () => {
     const perOrderSummary = useMemo(() => {
         return ordersData.map(order => {
             const orderMap = {};
-            const orderColorMap = {}; // Track colors per product
             let orderTotal = 0;
 
             order.products.forEach(p => {
                 const size = p.size;
                 const name = p.name;
                 const qty = p.quantity || 1;
-                const color = p.color;
+                const color = p.color || 'N/A';
+                const productKey = `${name} (${color})`;
 
                 if (!orderMap[size]) orderMap[size] = {};
-                if (!orderMap[size][name]) orderMap[size][name] = 0;
+                if (!orderMap[size][productKey]) orderMap[size][productKey] = 0;
 
-                orderMap[size][name] += qty;
+                orderMap[size][productKey] += qty;
                 orderTotal += qty;
-
-                // Store color for this product
-                if (!orderColorMap[name] && color) {
-                    orderColorMap[name] = color;
-                }
             });
 
             return {
@@ -136,7 +131,6 @@ const ProductSizeSummary = () => {
                 customerName: order.customerName,
                 orderDate: order.orderDate,
                 summary: orderMap,
-                colorMap: orderColorMap,
                 total: orderTotal
             };
         });
@@ -217,21 +211,15 @@ const ProductSizeSummary = () => {
                                                         <thead>
                                                         <tr className="bg-gray-900">
                                                             <th className="border border-gray-900 px-4 py-2 text-left text-white">Продукт</th>
-                                                            <th className="border border-gray-900 px-4 py-2 text-left text-white">Цвят</th>
                                                             <th className="border border-gray-900 px-4 py-2 text-left text-white">Размер</th>
                                                             <th className="border border-gray-900 px-4 py-2 text-center text-white">Количество</th>
                                                         </tr>
                                                         </thead>
                                                         <tbody>
                                                         {Object.entries(order.summary).map(([size, products]) =>
-                                                            Object.entries(products).map(([productName, qty]) => (
-                                                                <tr key={size + productName} className="hover:bg-gray-100">
-                                                                    <td className="border border-gray-300 px-4 py-2 text-gray-700 font-medium">{productName}</td>
-                                                                    <td className="border border-gray-300 px-4 py-2 text-gray-700">
-                                                                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                                                            {order.colorMap[productName] || 'N/A'}
-                                                                        </span>
-                                                                    </td>
+                                                            Object.entries(products).map(([productKey, qty]) => (
+                                                                <tr key={size + productKey} className="hover:bg-gray-100">
+                                                                    <td className="border border-gray-300 px-4 py-2 text-gray-700 font-medium">{productKey}</td>
                                                                     <td className="border border-gray-300 px-4 py-2 text-gray-700">{size}</td>
                                                                     <td className="border border-gray-300 px-4 py-2 text-center font-medium text-gray-700">{qty}</td>
                                                                 </tr>
@@ -303,7 +291,6 @@ const ProductSizeSummary = () => {
                             <thead>
                             <tr className="bg-blue-50">
                                 <th className="border border-blue-200 px-4 py-3 text-left font-semibold text-blue-900">Продукт</th>
-                                <th className="border border-blue-200 px-4 py-3 text-left font-semibold text-blue-900">Цвят</th>
                                 {allSizes.map(size => (
                                     <th key={size} className="border border-blue-200 px-4 py-3 text-center font-semibold text-blue-900">{size}</th>
                                 ))}
@@ -312,23 +299,18 @@ const ProductSizeSummary = () => {
                             </thead>
 
                             <tbody>
-                            {productNames.map(product => (
-                                <tr key={product} className="hover:bg-blue-50 transition-colors">
-                                    <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800">{product}</td>
-                                    <td className="border border-gray-300 px-4 py-3">
-                                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                            {summaryData.colorMap[product] || 'N/A'}
-                                        </span>
-                                    </td>
+                            {productNames.map(productKey => (
+                                <tr key={productKey} className="hover:bg-blue-50 transition-colors">
+                                    <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800">{productKey}</td>
 
                                     {allSizes.map(size => (
                                         <td key={size} className="border border-gray-300 px-4 py-3 text-center text-gray-700">
-                                            {summaryData.summary[product]?.[size] || '-'}
+                                            {summaryData.summary[productKey]?.[size] || '-'}
                                         </td>
                                     ))}
 
                                     <td className="border border-gray-300 px-4 py-3 font-bold bg-blue-50 text-blue-800 text-center text-lg">
-                                        {productTotals[product]}
+                                        {productTotals[productKey]}
                                     </td>
                                 </tr>
                             ))}
@@ -336,7 +318,7 @@ const ProductSizeSummary = () => {
 
                             <tfoot>
                             <tr className="bg-blue-600 text-white font-bold text-lg">
-                                <td className="border border-blue-500 px-4 py-4" colSpan="2">Общо по размери</td>
+                                <td className="border border-blue-500 px-4 py-4">Общо по размери</td>
                                 {allSizes.map(size => (
                                     <td key={size} className="border border-blue-500 px-4 py-4 text-center">
                                         {sizeTotals[size]}
