@@ -1,18 +1,7 @@
 import { Schema, model, models, type Model } from 'mongoose';
+import type { ProductCategory } from '@/lib/productConstants';
 
-/** Extend this list to add categories; stored as plain strings. */
-export const PRODUCT_CATEGORIES = [
-    't-shirt',
-    'hoodie',
-    'top',
-    'pants',
-    'shorts',
-    'leggings',
-    'jacket',
-    'accessory',
-] as const;
-
-export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number] | (string & {});
+export { PRODUCT_CATEGORIES, type ProductCategory } from '@/lib/productConstants';
 
 export interface SizeVariant {
     label: string;

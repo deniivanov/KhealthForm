@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PRODUCT_CATEGORIES } from '@/models/Product';
+import { PRODUCT_CATEGORIES } from '@/lib/productConstants';
 import { centsToEuroString } from '@/lib/money';
 import type { ProductInput } from '@/lib/validate/product';
 import { createProduct, updateProduct, setProductActive, type ActionResult } from '@/app/admin/products/actions';
