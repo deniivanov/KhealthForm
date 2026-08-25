@@ -94,6 +94,7 @@ const OrdersTable = ({
                         <th>Статус</th>
                         <th>Плащане</th>
                         <th>Дата</th>
+                        <th title="Изтегляне на XLSX за поръчката">Файл</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,11 +141,31 @@ const OrdersTable = ({
                                     </button>
                                 </td>
                                 <td className="text-muted whitespace-nowrap">{formatDate(order.createdAt)}</td>
+                                <td onClick={e => e.stopPropagation()}>
+                                    <span className="inline-flex items-center gap-1">
+                                        <a
+                                            href={`/api/admin/orders/${order._id}/export?report=production`}
+                                            className="btn btn-secondary"
+                                            style={{ padding: '3px 8px', fontSize: 14, lineHeight: 1 }}
+                                            title="XLSX за производство — артикули, размери, персонализация (без цени)"
+                                        >
+                                            🧵
+                                        </a>
+                                        <a
+                                            href={`/api/admin/orders/${order._id}/export?report=admin`}
+                                            className="btn btn-secondary"
+                                            style={{ padding: '3px 8px', fontSize: 14, lineHeight: 1 }}
+                                            title="XLSX за администрация — контакти, цени, плащане"
+                                        >
+                                            🧾
+                                        </a>
+                                    </span>
+                                </td>
                             </tr>
                             {expanded.has(order._id) && (
                                 <tr>
                                     <td></td>
-                                    <td colSpan={context ? 8 : 7} style={{ padding: '10px 8px' }}>
+                                    <td colSpan={context ? 9 : 8} style={{ padding: '10px 8px' }}>
                                         <div className="flex flex-col gap-1">
                                             {order.lines.map((line, i) => (
                                                 <div
