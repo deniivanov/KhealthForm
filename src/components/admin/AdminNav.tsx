@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
     { href: '/admin', label: 'Табло', exact: true },
     { href: '/admin/products', label: 'Продукти' },
     { href: '/admin/teams', label: 'Отбори' },
