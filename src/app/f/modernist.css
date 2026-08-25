@@ -55,7 +55,6 @@
 .modernist img { display: block; max-width: 100%; }
 
 .modernist .text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
-.modernist .grayscale-photo { filter: grayscale(1) contrast(1.08); }
 
 .modernist :focus { outline: none; }
 .modernist :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -204,3 +203,18 @@
 /* fully off-viewport on any screen width when closed */
 .modernist .detail-overlay[data-open='false'] { transform: translateX(calc(50vw + 51%)); }
 .modernist .detail-overlay[data-open='true'] { transform: translateX(0); }
+
+/* dimmed backdrop behind the drawer — desktop only */
+.modernist .detail-backdrop {
+    display: none;
+    position: fixed; inset: 0; z-index: 35;
+    background: color-mix(in srgb, var(--color-neutral-900) 40%, transparent);
+}
+
+/* Desktop: the detail view becomes a right-anchored drawer */
+@media (min-width: 1024px) {
+    .modernist .detail-overlay { left: auto; right: 0; margin: 0; width: 480px; }
+    .modernist .detail-overlay[data-open='false'] { transform: translateX(110%); }
+    .modernist .detail-backdrop { display: block; }
+    .modernist .toast { bottom: 24px; }
+}

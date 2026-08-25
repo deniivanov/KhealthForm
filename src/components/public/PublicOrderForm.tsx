@@ -60,7 +60,6 @@ const EMAIL_RX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 const Photo = ({ src, alt, aspect }: { src?: string; alt: string; aspect?: string }) => (
     <div
-        className="grayscale-photo"
         style={{ aspectRatio: aspect, background: 'var(--color-surface)', overflow: 'hidden', height: aspect ? undefined : '100%' }}
     >
         {src && (
@@ -236,40 +235,44 @@ const PublicOrderForm = ({
 
     const measurementLabel = (key: string) => dict.measurementLabels[key] || key;
 
+    const panelCls = 'bg-[var(--color-bg)] shadow-[var(--shadow-md)]';
+
     // ── Success view ──
     if (success) {
         return (
-            <div style={{ paddingBottom: 40 }}>
-                <div className="nav">
-                    <span className="nav-brand">{team.name}</span>
-                </div>
-                <div style={{ padding: '28px 20px' }}>
-                    <h6>{dict.orderReceived}</h6>
-                    <h2 style={{ marginBottom: 8 }}>
-                        {dict.thankYou}, {success.firstName}.
-                    </h2>
-                    <p className="text-muted" style={{ fontSize: 13 }}>{dict.successBody}</p>
-                    <div className="card elev-sm" style={{ margin: '16px 0' }}>
-                        <span className="card-kicker">{dict.reference}</span>
-                        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 28, letterSpacing: '0.02em' }}>
-                            {success.reference}
-                        </span>
-                        <span className="card-meta">
-                            {dict.total} {fmt(success.totalCents)} · {dict.confirmationNote}
-                        </span>
+            <div className={`mx-auto w-full max-w-[480px] lg:max-w-[560px] min-h-screen lg:min-h-0 lg:my-10 ${panelCls}`}>
+                <div style={{ paddingBottom: 40 }}>
+                    <div className="nav">
+                        <span className="nav-brand">{team.name}</span>
                     </div>
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-block"
-                        style={{ minHeight: 44 }}
-                        onClick={() => {
-                            setSuccess(null);
-                            setCart([]);
-                            setNotes('');
-                        }}
-                    >
-                        {dict.newOrder}
-                    </button>
+                    <div style={{ padding: '28px 20px' }}>
+                        <h6>{dict.orderReceived}</h6>
+                        <h2 style={{ marginBottom: 8 }}>
+                            {dict.thankYou}, {success.firstName}.
+                        </h2>
+                        <p className="text-muted" style={{ fontSize: 13 }}>{dict.successBody}</p>
+                        <div className="card elev-sm" style={{ margin: '16px 0' }}>
+                            <span className="card-kicker">{dict.reference}</span>
+                            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 28, letterSpacing: '0.02em' }}>
+                                {success.reference}
+                            </span>
+                            <span className="card-meta">
+                                {dict.total} {fmt(success.totalCents)} · {dict.confirmationNote}
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-block"
+                            style={{ minHeight: 44 }}
+                            onClick={() => {
+                                setSuccess(null);
+                                setCart([]);
+                                setNotes('');
+                            }}
+                        >
+                            {dict.newOrder}
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -277,147 +280,157 @@ const PublicOrderForm = ({
 
     return (
         <>
-            {/* ══ Shop view (stays mounted under the detail overlay) ══ */}
-            <div style={{ paddingBottom: cart.length > 0 ? 88 : 24 }}>
-                <div className="nav">
-                    <span className="nav-brand">{team.name}</span>
-                    {deadline && (
-                        <span className="tag tag-accent" style={{ whiteSpace: 'nowrap' }}>
-                            {dict.closesShort} {deadline}
-                        </span>
-                    )}
-                </div>
+            <div className="mx-auto w-full max-w-[480px] lg:max-w-[1140px] lg:px-6 lg:py-10">
+                <div className={`min-h-screen lg:min-h-0 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-8 lg:items-start ${panelCls} lg:bg-transparent lg:shadow-none`}>
 
-                {/* Intro */}
-                <div style={{ padding: '20px 20px 4px' }}>
-                    <h6>{dict.kicker}</h6>
-                    <h3 style={{ marginBottom: 6 }}>{form.title}</h3>
-                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
-                        {form.message || dict.tapHint}
-                    </p>
-                </div>
-
-                {/* Product grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 12px', padding: '16px 20px' }}>
-                    {form.items.map(item => (
-                        <div
-                            key={item._id}
-                            onClick={() => openDetail(item)}
-                            style={{ cursor: 'pointer', background: 'var(--color-surface)' }}
-                        >
-                            <Photo src={item.images[0]} alt={item.name} aspect="3 / 4" />
-                            <div style={{ padding: '10px 12px 12px' }}>
-                                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 14 }}>
-                                    {item.name}
-                                </span>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 2 }}>
-                                    <span className="text-muted" style={{ fontSize: 11.5 }}>
-                                        {item.sizes[0]?.label}–{item.sizes[item.sizes.length - 1]?.label}
-                                    </span>
-                                    <span style={{ fontWeight: 600, fontSize: 13 }}>{fmt(item.priceCents)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Your order */}
-                <div ref={summaryRef} style={{ padding: '8px 20px 0', scrollMarginTop: 12 }}>
-                    <hr className="hr" style={{ margin: '0 0 16px' }} />
-                    <h6>{dict.orderSummary}</h6>
-                    {cart.length === 0 && (
-                        <p className="text-muted" style={{ fontSize: 13 }}>{dict.emptyCart}</p>
-                    )}
-                    {cart.map((line, i) => (
-                        <div
-                            key={i}
-                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--color-divider)' }}
-                        >
-                            <div style={{ flex: 1, fontSize: 13 }}>
-                                <span style={{ fontWeight: 600 }}>
-                                    {line.productName} · {line.sizeLabel}
-                                    {line.quantity > 1 ? ` × ${line.quantity}` : ''}
-                                </span>
-                                {Object.values(line.personalization).length > 0 && (
-                                    <span className="text-muted" style={{ display: 'block', fontSize: 11.5 }}>
-                                        {Object.values(line.personalization).join(' · ')}
+                    {/* ══ Main panel: header, intro, product grid ══ */}
+                    <main>
+                        <div className="lg:bg-[var(--color-bg)] lg:shadow-[var(--shadow-md)]">
+                            <div className="nav">
+                                <span className="nav-brand">{team.name}</span>
+                                {deadline && (
+                                    <span className="tag tag-accent" style={{ whiteSpace: 'nowrap' }}>
+                                        {dict.closesShort} {deadline}
                                     </span>
                                 )}
                             </div>
-                            <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
-                                {fmt(line.unitPriceCents * line.quantity)}
-                            </span>
+
+                            <div style={{ padding: '20px 20px 4px' }}>
+                                <h6>{dict.kicker}</h6>
+                                <h3 style={{ marginBottom: 6 }}>{form.title}</h3>
+                                <p className="text-muted" style={{ fontSize: 13, margin: 0, maxWidth: 560 }}>
+                                    {form.message || dict.tapHint}
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-4" style={{ padding: '16px 20px 24px' }}>
+                                {form.items.map(item => (
+                                    <div
+                                        key={item._id}
+                                        onClick={() => openDetail(item)}
+                                        style={{ cursor: 'pointer', background: 'var(--color-surface)' }}
+                                    >
+                                        <Photo src={item.images[0]} alt={item.name} aspect="3 / 4" />
+                                        <div style={{ padding: '10px 12px 12px' }}>
+                                            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 14 }}>
+                                                {item.name}
+                                            </span>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 2 }}>
+                                                <span className="text-muted" style={{ fontSize: 11.5 }}>
+                                                    {item.sizes[0]?.label}–{item.sizes[item.sizes.length - 1]?.label}
+                                                </span>
+                                                <span style={{ fontWeight: 600, fontSize: 13 }}>{fmt(item.priceCents)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* ══ Order panel: cart, contact, submit — sticky sidebar on desktop ══ */}
+                    <aside
+                        className="lg:sticky lg:top-10 lg:bg-[var(--color-bg)] lg:shadow-[var(--shadow-md)]"
+                        style={{ paddingBottom: cart.length > 0 ? 72 : 8 }}
+                    >
+                        <div ref={summaryRef} style={{ padding: '8px 20px 0', scrollMarginTop: 12 }}>
+                            <hr className="hr lg:hidden" style={{ margin: '0 0 16px' }} />
+                            <h6 className="lg:pt-4">{dict.orderSummary}</h6>
+                            {cart.length === 0 && (
+                                <p className="text-muted" style={{ fontSize: 13 }}>{dict.emptyCart}</p>
+                            )}
+                            {cart.map((line, i) => (
+                                <div
+                                    key={i}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--color-divider)' }}
+                                >
+                                    <div style={{ flex: 1, fontSize: 13 }}>
+                                        <span style={{ fontWeight: 600 }}>
+                                            {line.productName} · {line.sizeLabel}
+                                            {line.quantity > 1 ? ` × ${line.quantity}` : ''}
+                                        </span>
+                                        {Object.values(line.personalization).length > 0 && (
+                                            <span className="text-muted" style={{ display: 'block', fontSize: 11.5 }}>
+                                                {Object.values(line.personalization).join(' · ')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
+                                        {fmt(line.unitPriceCents * line.quantity)}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => setCart(cart.filter((_, j) => j !== i))}
+                                        title={dict.remove}
+                                        style={{ width: 30, height: 30, padding: 0, fontSize: 14, lineHeight: 1 }}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                            {cart.length > 0 && (
+                                <div
+                                    style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 16, borderBottom: '2px solid var(--color-divider)' }}
+                                >
+                                    <span>{dict.total}</span>
+                                    <span>{fmt(totalCents)}</span>
+                                </div>
+                            )}
+                            {errors.cart && <p className="field-error" style={{ margin: '8px 0 0' }}>{errors.cart}</p>}
+                        </div>
+
+                        <div style={{ padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <h6 style={{ margin: 0 }}>{dict.contactDetails}</h6>
+                            <div className="field">
+                                <label>{dict.fullName} *</label>
+                                <input className="input" value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" />
+                                {errors.fullName && <p className="field-error">{errors.fullName}</p>}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div className="field">
+                                    <label>
+                                        {dict.phone} {form.requiredMemberFields.phone ? '*' : `(${dict.optional})`}
+                                    </label>
+                                    <input className="input" value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" />
+                                    {errors.phone && <p className="field-error">{errors.phone}</p>}
+                                </div>
+                                <div className="field">
+                                    <label>
+                                        {dict.email} {form.requiredMemberFields.email ? '*' : `(${dict.optional})`}
+                                    </label>
+                                    <input className="input" value={email} onChange={e => setEmail(e.target.value)} type="email" autoComplete="email" />
+                                    {errors.email && <p className="field-error">{errors.email}</p>}
+                                </div>
+                            </div>
+                            <div className="field">
+                                <label>
+                                    {dict.notes} ({dict.optional})
+                                </label>
+                                <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder={dict.notesPlaceholder} />
+                            </div>
+                            {submitError && (
+                                <p style={{ color: 'var(--color-accent-700)', fontSize: 13, fontWeight: 600, margin: 0 }}>{submitError}</p>
+                            )}
                             <button
                                 type="button"
-                                className="btn btn-secondary"
-                                onClick={() => setCart(cart.filter((_, j) => j !== i))}
-                                title={dict.remove}
-                                style={{ width: 30, height: 30, padding: 0, fontSize: 14, lineHeight: 1 }}
+                                className="btn btn-primary btn-block"
+                                style={{ minHeight: 46 }}
+                                disabled={submitting}
+                                onClick={handleSubmit}
                             >
-                                ×
+                                {submitting ? dict.submitting : `${dict.submit} — ${fmt(totalCents)}`}
                             </button>
+                            <p className="text-muted" style={{ fontSize: 11, margin: '0 0 12px' }}>{dict.referenceNote}</p>
                         </div>
-                    ))}
-                    {cart.length > 0 && (
-                        <div
-                            style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 16, borderBottom: '2px solid var(--color-divider)' }}
-                        >
-                            <span>{dict.total}</span>
-                            <span>{fmt(totalCents)}</span>
-                        </div>
-                    )}
-                    {errors.cart && <p className="field-error" style={{ margin: '8px 0 0' }}>{errors.cart}</p>}
-                </div>
-
-                {/* Contact */}
-                <div style={{ padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <h6 style={{ margin: 0 }}>{dict.contactDetails}</h6>
-                    <div className="field">
-                        <label>{dict.fullName} *</label>
-                        <input className="input" value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" />
-                        {errors.fullName && <p className="field-error">{errors.fullName}</p>}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                        <div className="field">
-                            <label>
-                                {dict.phone} {form.requiredMemberFields.phone ? '*' : `(${dict.optional})`}
-                            </label>
-                            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" />
-                            {errors.phone && <p className="field-error">{errors.phone}</p>}
-                        </div>
-                        <div className="field">
-                            <label>
-                                {dict.email} {form.requiredMemberFields.email ? '*' : `(${dict.optional})`}
-                            </label>
-                            <input className="input" value={email} onChange={e => setEmail(e.target.value)} type="email" autoComplete="email" />
-                            {errors.email && <p className="field-error">{errors.email}</p>}
-                        </div>
-                    </div>
-                    <div className="field">
-                        <label>
-                            {dict.notes} ({dict.optional})
-                        </label>
-                        <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder={dict.notesPlaceholder} />
-                    </div>
-                    {submitError && (
-                        <p style={{ color: 'var(--color-accent-700)', fontSize: 13, fontWeight: 600, margin: 0 }}>{submitError}</p>
-                    )}
-                    <button
-                        type="button"
-                        className="btn btn-primary btn-block"
-                        style={{ minHeight: 46 }}
-                        disabled={submitting}
-                        onClick={handleSubmit}
-                    >
-                        {submitting ? dict.submitting : `${dict.submit} — ${fmt(totalCents)}`}
-                    </button>
-                    <p className="text-muted" style={{ fontSize: 11, margin: '0 0 12px' }}>{dict.referenceNote}</p>
+                    </aside>
                 </div>
             </div>
 
-            {/* ══ Sticky bottom bar ══ */}
+            {/* ══ Sticky bottom bar (mobile only — the sidebar is visible on desktop) ══ */}
             {view === 'shop' && cart.length > 0 && (
                 <div
+                    className="lg:hidden"
                     style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(480px, 100vw)', zIndex: 30, background: 'var(--color-surface)', borderTop: '2px solid var(--color-divider)', padding: '10px 20px' }}
                 >
                     <button
@@ -434,7 +447,8 @@ const PublicOrderForm = ({
                 </div>
             )}
 
-            {/* ══ Product detail slide-in ══ */}
+            {/* ══ Product detail slide-in (full column on mobile, right drawer on desktop) ══ */}
+            {view === 'detail' && <div className="detail-backdrop" onClick={() => setView('shop')} />}
             <div
                 ref={overlayRef}
                 className="detail-overlay"

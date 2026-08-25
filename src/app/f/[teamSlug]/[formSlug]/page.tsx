@@ -94,16 +94,14 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
 
     return (
         <div className="modernist min-h-screen" style={{ ...brandStyle, background: 'var(--color-neutral-200)' }}>
-            <div className="elev-md mx-auto min-h-screen relative" style={{ maxWidth: 480, background: 'var(--color-bg)' }}>
-                <PublicOrderForm
-                    team={toPlain<PublicTeamData>(team)}
-                    form={toPlain<PublicFormData>(form)}
-                    locale={locale}
-                    dict={dict}
-                    deadline={form.closesAt ? formatDeadline(form.closesAt, locale) : null}
-                />
-                {langToggle}
-            </div>
+            <PublicOrderForm
+                team={toPlain<PublicTeamData>(team)}
+                form={toPlain<PublicFormData>(form)}
+                locale={locale}
+                dict={dict}
+                deadline={form.closesAt ? formatDeadline(form.closesAt, locale) : null}
+            />
+            {langToggle}
         </div>
     );
 }
