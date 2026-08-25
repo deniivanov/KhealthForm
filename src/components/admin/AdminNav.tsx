@@ -8,6 +8,7 @@ const NAV_ITEMS = [
     { href: '/admin/teams', label: 'Отбори' },
     { href: '/admin/forms', label: 'Форми' },
     { href: '/admin/orders', label: 'Поръчки' },
+    { href: '/production', label: '📺 Производство' },
 ];
 
 const AdminNav = () => {

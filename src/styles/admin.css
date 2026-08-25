@@ -92,3 +92,39 @@
     background: var(--color-bg); color: var(--color-text);
     font-family: inherit; cursor: pointer;
 }
+
+/* — order status colors (shared: orders table + production TV view) — */
+.modernist {
+    --status-submitted: #6d6a68;
+    --status-confirmed: #b58500;
+    --status-in_production: #3a6ea5;
+    --status-delivered: #2e7d4f;
+    --status-cancelled: #b3402e;
+}
+.modernist .tag-select[data-status='submitted'],
+.modernist .status-block[data-status='submitted'] { --status: var(--status-submitted); }
+.modernist .tag-select[data-status='confirmed'],
+.modernist .status-block[data-status='confirmed'] { --status: var(--status-confirmed); }
+.modernist .tag-select[data-status='in_production'],
+.modernist .status-block[data-status='in_production'] { --status: var(--status-in_production); }
+.modernist .tag-select[data-status='delivered'],
+.modernist .status-block[data-status='delivered'] { --status: var(--status-delivered); }
+.modernist .tag-select[data-status='cancelled'],
+.modernist .status-block[data-status='cancelled'] { --status: var(--status-cancelled); }
+
+.modernist .tag-select[data-status] {
+    border-color: var(--status);
+    border-left-width: 4px;
+    background: color-mix(in oklab, var(--status), white 90%);
+    color: color-mix(in oklab, var(--status), black 25%);
+    font-weight: 600;
+}
+
+.modernist .status-block {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 6px 14px; font-weight: 800;
+    font-family: var(--font-heading);
+    letter-spacing: 0.04em; text-transform: uppercase;
+    background: var(--status); color: #fff;
+    white-space: nowrap;
+}

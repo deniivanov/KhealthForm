@@ -57,10 +57,14 @@ export default async function FormOrdersPage({
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <a href={`${exportBase}?report=orders&format=csv`} className="btn btn-secondary whitespace-nowrap">Поръчки CSV</a>
-                        <a href={`${exportBase}?report=orders&format=xlsx`} className="btn btn-secondary whitespace-nowrap">Поръчки XLSX</a>
-                        <a href={`${exportBase}?report=summary&format=csv`} className="btn btn-secondary whitespace-nowrap">Производство CSV</a>
-                        <a href={`${exportBase}?report=summary&format=xlsx`} className="btn btn-secondary whitespace-nowrap">Производство XLSX</a>
+                        <a href={`${exportBase}?report=production&format=xlsx`} className="btn btn-primary whitespace-nowrap" title="Количества + списък с персонализации, без цени и контакти">
+                            ⬇ За производство (XLSX)
+                        </a>
+                        <a href={`${exportBase}?report=admin&format=xlsx`} className="btn btn-primary whitespace-nowrap" title="Пълен списък с контакти, цени и плащания + обобщение">
+                            ⬇ За администрация (XLSX)
+                        </a>
+                        <a href={`${exportBase}?report=production&format=csv`} className="btn btn-ghost whitespace-nowrap" style={{ fontSize: 12 }}>CSV</a>
+                        <a href={`${exportBase}?report=admin&format=csv`} className="btn btn-ghost whitespace-nowrap" style={{ fontSize: 12 }}>CSV (адм.)</a>
                     </div>
                 </div>
             </div>

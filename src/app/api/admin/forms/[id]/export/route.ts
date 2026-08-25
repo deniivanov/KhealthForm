@@ -6,10 +6,10 @@ import Form from '@/models/Form';
 import Order from '@/models/Order';
 import { toPlain } from '@/lib/serialize';
 import {
-    buildOrdersCsv,
-    buildOrdersXlsx,
-    buildSummaryCsv,
-    buildSummaryXlsx,
+    buildAdminCsv,
+    buildAdminXlsx,
+    buildProductionCsv,
+    buildProductionXlsx,
     type ExportableOrder,
 } from '@/lib/export';
 import { slugify } from '@/lib/slug';
@@ -30,8 +30,10 @@ export async function GET(
         return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
     const url = new URL(request.url);
-    const report = url.searchParams.get('report') === 'summary' ? 'summary' : 'orders';
-    const format = url.searchParams.get('format') === 'xlsx' ? 'xlsx' : 'csv';
+    const rawReport = url.searchParams.get('report') ?? 'admin';
+    // old links used orders/summary — keep them working
+    const report = rawReport === 'production' || rawReport === 'summary' ? 'production' : 'admin';
+    const format = url.searchParams.get('format') === 'csv' ? 'csv' : 'xlsx';
 
     await connectDB();
     const form = await Form.findById(id).lean();
@@ -41,10 +43,10 @@ export async function GET(
         await Order.find({ formId: id }).sort({ createdAt: 1 }).lean()
     );
 
-    const base = `${slugify(form.title)}-${report}`;
+    const base = `${slugify(form.title)}-${report === 'production' ? 'proizvodstvo' : 'administratsia'}`;
 
     if (format === 'csv') {
-        const csv = report === 'orders' ? buildOrdersCsv(orders) : buildSummaryCsv(orders);
+        const csv = report === 'production' ? buildProductionCsv(orders) : buildAdminCsv(orders);
         return new NextResponse(csv, {
             headers: {
                 'Content-Type': 'text/csv; charset=utf-8',
@@ -53,7 +55,7 @@ export async function GET(
         });
     }
 
-    const buffer = report === 'orders' ? await buildOrdersXlsx(orders) : await buildSummaryXlsx(orders);
+    const buffer = report === 'production' ? await buildProductionXlsx(orders) : await buildAdminXlsx(orders);
     return new NextResponse(new Uint8Array(buffer), {
         headers: {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

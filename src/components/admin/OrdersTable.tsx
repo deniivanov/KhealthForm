@@ -121,6 +121,7 @@ const OrdersTable = ({
                                         disabled={busyId === order._id}
                                         onChange={e => changeStatus(order._id, e.target.value as OrderStatus)}
                                         className="tag-select"
+                                        data-status={order.status}
                                     >
                                         {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(s => (
                                             <option key={s} value={s}>{STATUS_LABELS[s]}</option>
