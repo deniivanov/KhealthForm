@@ -5,6 +5,7 @@ import { slugify } from '@/lib/slug';
 import type { TeamInput } from '@/lib/validate/team';
 import { createTeam, updateTeam } from '@/app/admin/teams/actions';
 import type { ActionResult } from '@/app/admin/products/actions';
+import ImageUploadButton from '@/components/admin/ImageUploadButton';
 
 export interface SerializedTeam {
     _id: string;
@@ -165,9 +166,10 @@ const TeamEditor = ({ initial }: { initial?: SerializedTeam }) => {
                     </p>
 
                     <div className="field">
-                        <label>Лого (URL)</label>
+                        <label>Лого</label>
                         <div className="flex items-center gap-3">
                             <input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} className="input" placeholder="https://..." />
+                            <ImageUploadButton label="Качи лого" onUploaded={setLogoUrl} />
                             {logoUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img

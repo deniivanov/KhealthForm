@@ -5,6 +5,7 @@ import { PRODUCT_CATEGORIES } from '@/lib/productConstants';
 import { centsToEuroString } from '@/lib/money';
 import type { ProductInput } from '@/lib/validate/product';
 import { createProduct, updateProduct, setProductActive, type ActionResult } from '@/app/admin/products/actions';
+import ImageUploadButton from '@/components/admin/ImageUploadButton';
 
 export interface SerializedProduct {
     _id: string;
@@ -231,10 +232,14 @@ const ProductEditor = ({ initial }: { initial?: SerializedProduct }) => {
                     </div>
 
                     <div className="field">
-                        <label>Снимки (URL адреси)</label>
+                        <label>Снимки</label>
                         <div className="flex flex-col gap-2">
                             {images.map((url, i) => (
                                 <div key={i} className="flex items-center gap-2">
+                                    {url.trim() && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={url} alt="" style={{ width: 36, height: 36, objectFit: 'cover', border: '1px solid var(--color-divider)', flexShrink: 0 }} />
+                                    )}
                                     <input
                                         value={url}
                                         onChange={e => setImages(images.map((u, j) => (j === i ? e.target.value : u)))}
@@ -251,9 +256,12 @@ const ProductEditor = ({ initial }: { initial?: SerializedProduct }) => {
                                     </button>
                                 </div>
                             ))}
-                            <div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <ImageUploadButton
+                                    onUploaded={url => setImages(prev => [...prev.filter(u => u.trim()), url])}
+                                />
                                 <button type="button" onClick={() => setImages([...images, ''])} className="btn btn-ghost" style={{ fontSize: 13 }}>
-                                    + Добави снимка
+                                    + Добави URL ръчно
                                 </button>
                             </div>
                             {errors.images && <p className="field-error">{errors.images}</p>}
