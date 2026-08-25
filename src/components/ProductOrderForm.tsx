@@ -2,25 +2,34 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import axios from 'axios';
+import { CATALOGS, type CatalogProduct } from '@/lib/catalogs';
+import type { CartItem, TempSelection, OrderSuccessInfo } from '@/lib/legacy-types';
 
-const ProductOrderFormNoName = () => {
-    const [cartItems, setCartItems] = useState([]); // [{productId, name, color, price, size, quantity}]
-    const [tempSelections, setTempSelections] = useState({}); // per-product UI selection: { [id]: { size, quantity } }
-    const [zoomedImage, setZoomedImage] = useState(null);
+const ProductOrderForm = ({ initialName = '', lockName = false }: { initialName?: string; lockName?: boolean }) => {
+    // ====== Core state ======
+    const [cartItems, setCartItems] = useState<CartItem[]>([]); // [{productId, name, color, price, size, quantity}]
+    const [tempSelections, setTempSelections] = useState<Record<number, TempSelection>>({}); // per-product UI selection: { [id]: { size, quantity } }
+    const [zoomedImage, setZoomedImage] = useState<CatalogProduct | null>(null);
 
-    const [customerName, setCustomerName] = useState('');
+    const [customerName, setCustomerName] = useState(initialName || '');
+    const [nameLocked, setNameLocked] = useState(!!lockName);
     const [additionalInfo, setAdditionalInfo] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [orderSuccess, setOrderSuccess] = useState(null);
+    const [orderSuccess, setOrderSuccess] = useState<OrderSuccessInfo | null>(null);
     const [countdown, setCountdown] = useState(15);
-    const [showConfirmation, setShowConfirmation] = useState(false);
 
     // Simple toast
     const [toast, setToast] = useState({ show: false, message: '' });
 
+    // sync state from props (e.g., when navigating between names)
     useEffect(() => {
-        let timer;
+        setCustomerName(initialName || '');
+        setNameLocked(!!lockName);
+    }, [initialName, lockName]);
+
+    useEffect(() => {
+        let timer: ReturnType<typeof setInterval> | undefined;
         if (orderSuccess) {
             timer = setInterval(() => {
                 setCountdown(prev => {
@@ -35,31 +44,12 @@ const ProductOrderFormNoName = () => {
         }
         return () => clearInterval(timer);
     }, [orderSuccess]);
-    const products = [
-        { id: 1, name: "Тениска Биляна Сублимация", color: "Черен", price: 60.00, image: "https://ik.imagekit.io/brandbeam/bilyana-1.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 2, name: "Тениска Биляна Сублимация", color: "Розов", price: 35.00, image: "https://ik.imagekit.io/brandbeam/bilyana-3.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', "L"] },
-        { id: 3, name: 'Горнище Биляна Сублимация', color: "Бял", price: 60.00, image: "https://ik.imagekit.io/brandbeam/bilyana-2.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 4, name: "Тениска Сублимация Gradient", color: "Розово/Черно", price: 75.00, image: "https://ik.imagekit.io/brandbeam/bilyana-4.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 5, name: "Клин KHealth дълъг", color: "Черен", price: 49.00, image: "https://ik.imagekit.io/brandbeam/bilyana-5.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 6, name: "Блуза", color: "Черен", price: 39.00, image: "https://ik.imagekit.io/brandbeam/bilyana-11.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 7, name: "Клин KHealth къс", color: "Черно", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-8.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 8, name: "Тениска Биляна Памук", color: "Цикламено", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-7.jpg",
-            sizes:['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 9, name: "Суичър Кхеалтх", color: "Розов", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-12.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] },
-        { id: 10, name: "Долнище Khealth", color: "Черно", price: 89.00, image: "https://ik.imagekit.io/brandbeam/bilyana-9.jpg",
-            sizes: ['104-110','116-122','128-134','140-146','152-158','164-170','XS','S','M', 'L'] }
-    ];
 
+    // ====== Catalog (shared with the server, which does the pricing) ======
+    const products = CATALOGS.trainer;
 
-    const ensureTempSelection = (product) => {
+    // Initialize default per-card selection when first focused/used
+    const ensureTempSelection = (product: CatalogProduct) => {
         setTempSelections(prev => {
             if (prev[product.id]) return prev;
             return {
@@ -72,19 +62,19 @@ const ProductOrderFormNoName = () => {
         });
     };
 
-    const setSelectionField = (productId, field, value) => {
+    const setSelectionField = (productId: number, field: keyof TempSelection, value: string | number) => {
         setTempSelections(prev => ({
             ...prev,
             [productId]: {
                 ...(prev[productId] || {}),
                 [field]: value
-            }
+            } as TempSelection
         }));
     };
 
-    const addToCart = (product) => {
+    const addToCart = (product: CatalogProduct) => {
         const sel = tempSelections[product.id] || { size: product.sizes?.[0] || 'S', quantity: 1 };
-        const qty = Math.max(1, parseInt(sel.quantity, 10) || 1);
+        const qty = Math.max(1, parseInt(sel.quantity as unknown as string, 10) || 1);
 
         setCartItems(prev => {
             // Merge with existing line if same product & size
@@ -112,14 +102,14 @@ const ProductOrderFormNoName = () => {
         setTimeout(() => setToast({ show: false, message: '' }), 1800);
     };
 
-    const removeCartItem = (index) => {
+    const removeCartItem = (index: number) => {
         setCartItems(prev => prev.filter((_, i) => i !== index));
     };
 
     const calculateTotal = () =>
         cartItems.reduce((sum, li) => sum + li.price * li.quantity, 0);
 
-    const handleInitialSubmit = () => {
+    const handleSubmit = async () => {
         if (!customerName.trim()) {
             alert('Моля въведете името си');
             return;
@@ -128,78 +118,46 @@ const ProductOrderFormNoName = () => {
             alert('Моля добавете поне един продукт в поръчката.');
             return;
         }
-        setShowConfirmation(true);
-    };
 
-    const handleConfirmedSubmit = async () => {
         setIsSubmitting(true);
 
         const orderData = {
+            catalog: 'trainer',
             customerName,
             additionalInfo,
             products: cartItems.map(li => ({
                 id: li.productId,
-                name: li.name,
-                color: li.color,
-                price: li.price,
                 size: li.size,
                 quantity: li.quantity
-            })),
-            total: calculateTotal(),
-            orderDate: new Date().toISOString(),
-            status: 'pending'
+            }))
         };
 
         try {
-            const baseUrl = 'https://n8n.bumpbots.com';
-            const webhookId = '62e33cf2-b187-44c6-baee-5b4f3c821c48';
-            const urlsToTry = [
-                `${baseUrl}/webhook-test/${webhookId}`,
-                `${baseUrl}/webhook/${webhookId}`,
-                `${baseUrl}/api/webhook/${webhookId}`,
-                `${baseUrl}/webhook-test/${webhookId}/`,
-                `${baseUrl}/webhook/${webhookId}/`
-            ];
-
-            let response;
-            for (const url of urlsToTry) {
-                try {
-                    response = await axios.post(url, orderData, {
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        timeout: 10000,
-                        withCredentials: false
-                    });
-                    if (response.status === 200) break;
-                } catch {}
-            }
-            if (!response || response.status !== 200) throw new Error('Всички webhook URL-та не работят');
+            const response = await axios.post('/api/orders', orderData, {
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 15000
+            });
+            if (!response.data?.success) throw new Error(response.data?.message || 'Order failed');
 
             setOrderSuccess({
-                orderId: response.data?.orderId || Math.floor(Math.random() * 100000),
+                orderId: response.data.orderId,
                 customerName,
                 productCount: cartItems.length,
-                estimatedDelivery: response.data?.estimatedDelivery || '2-5 работни дни'
+                estimatedDelivery: '2-5 работни дни'
             });
 
             setCartItems([]);
-            setCustomerName('');
+            if (!nameLocked) setCustomerName('');
             setAdditionalInfo('');
-            setShowConfirmation(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error submitting order:', error);
-            let errorMessage = 'Възникна грешка при изпращането на поръчката.';
-            if (error.message === 'Всички webhook URL-та не работят') {
-                errorMessage = 'Webhook-ът не е достъпен. Моля проверете дали n8n workflow-ът е активен и дали URL-то е правилно.';
-            }
+            const errorMessage = error.response?.status === 429
+                ? 'Твърде много поръчки за кратко време. Моля опитайте отново след минута.'
+                : 'Възникна грешка при изпращането на поръчката. Моля опитайте отново.';
             alert(errorMessage);
-            setShowConfirmation(false);
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const handleCancelConfirmation = () => {
-        setShowConfirmation(false);
     };
 
     // ===== Success view =====
@@ -329,19 +287,33 @@ const ProductOrderFormNoName = () => {
                                         </button>
                                     </div>
                                 ))}
+                                <div className="flex justify-between items-center pt-4 text-xl font-bold bg-yellow-100 p-4 rounded-lg border-2 border-yellow-400">
+                                    <span className="text-slate-800">Общо:</span>
+                                    <span className="text-slate-800">{calculateTotal().toFixed(2)} лв</span>
+                                </div>
                             </div>
 
                             {/* Customer info */}
                             <div className="space-y-6">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-3">Име на клиента *</label>
-                                    <input
-                                        type="text"
-                                        value={customerName}
-                                        onChange={(e) => setCustomerName(e.target.value)}
-                                        className="w-full border-2 border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-slate-800 font-medium"
-                                        placeholder="Моля въведете името си тук"
-                                    />
+                                    {nameLocked ? (
+                                        <div className="w-full">
+                                            <div className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 bg-slate-100 text-slate-800 font-semibold">
+                                                {customerName}
+                                            </div>
+                                            <input type="hidden" value={customerName} readOnly />
+                                            <p className="text-xs text-slate-500 mt-2">Името е попълнено автоматично и не може да се променя.</p>
+                                        </div>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={customerName}
+                                            onChange={(e) => setCustomerName(e.target.value)}
+                                            className="w-full border-2 border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-slate-800 font-medium"
+                                            placeholder="Моля въведете името си тук"
+                                        />
+                                    )}
                                 </div>
 
                                 <div>
@@ -356,8 +328,8 @@ const ProductOrderFormNoName = () => {
                                 </div>
 
                                 <button
-                                    onClick={handleInitialSubmit}
-                                    disabled={isSubmitting || orderSuccess}
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting || !!orderSuccess}
                                     className={`w-full py-4 px-6 rounded-lg font-bold text-lg transition-all duration-200 focus:outline-none shadow-md flex items-center justify-center ${
                                         orderSuccess
                                             ? 'bg-green-500 text-white cursor-default'
@@ -388,104 +360,11 @@ const ProductOrderFormNoName = () => {
                 </div>
             </div>
 
-            {/* Confirmation Modal */}
-            {showConfirmation && (
-                <div className="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-8">
-                            <h2 className="text-3xl font-bold text-slate-800 mb-6 text-center border-b-4 border-yellow-400 pb-4">
-                                Потвърждение на поръчката
-                            </h2>
-
-                            {/* Customer Information */}
-                            <div className="mb-6 bg-slate-50 p-6 rounded-lg border-2 border-slate-200">
-                                <h3 className="text-xl font-bold text-slate-800 mb-4">Информация за клиента</h3>
-                                <div className="space-y-2">
-                                    <div className="flex">
-                                        <span className="font-semibold text-slate-700 w-48">Име:</span>
-                                        <span className="text-slate-800">{customerName}</span>
-                                    </div>
-                                    {additionalInfo && (
-                                        <div className="flex">
-                                            <span className="font-semibold text-slate-700 w-48">Допълнителна информация:</span>
-                                            <span className="text-slate-800">{additionalInfo}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Products Table */}
-                            <div className="mb-6">
-                                <h3 className="text-xl font-bold text-slate-800 mb-4">Продукти</h3>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full border-collapse">
-                                        <thead>
-                                        <tr className="bg-yellow-400">
-                                            <th className="border-2 border-slate-300 px-4 py-3 text-left font-bold text-slate-800">Продукт</th>
-                                            <th className="border-2 border-slate-300 px-4 py-3 text-left font-bold text-slate-800">Цвят</th>
-                                            <th className="border-2 border-slate-300 px-4 py-3 text-center font-bold text-slate-800">Размер</th>
-                                            <th className="border-2 border-slate-300 px-4 py-3 text-center font-bold text-slate-800">Брой</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {cartItems.map((item, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50">
-                                                <td className="border-2 border-slate-300 px-4 py-3 text-slate-800">{item.name}</td>
-                                                <td className="border-2 border-slate-300 px-4 py-3 text-slate-700">{item.color}</td>
-                                                <td className="border-2 border-slate-300 px-4 py-3 text-center font-semibold text-slate-800">{item.size}</td>
-                                                <td className="border-2 border-slate-300 px-4 py-3 text-center font-semibold text-slate-800">{item.quantity}</td>
-                                            </tr>
-                                        ))}
-                                        </tbody>
-                                        <tfoot>
-                                        <tr className="bg-yellow-100">
-                                        </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {/* Confirmation Question */}
-                            <div className="bg-slate-100 p-6 rounded-lg border-2 border-slate-300 mb-6">
-                                <p className="text-xl font-bold text-center text-slate-800 mb-4">
-                                    Моля потвърдете, че информацията е вярна
-                                </p>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={handleCancelConfirmation}
-                                    disabled={isSubmitting}
-                                    className="flex-1 py-4 px-6 rounded-lg font-bold text-lg bg-slate-300 text-slate-800 hover:bg-slate-400 transition-all duration-200 focus:ring-4 focus:ring-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Не, редактирай поръчката
-                                </button>
-                                <button
-                                    onClick={handleConfirmedSubmit}
-                                    disabled={isSubmitting}
-                                    className="flex-1 py-4 px-6 rounded-lg font-bold text-lg bg-green-500 text-white hover:bg-green-600 transition-all duration-200 focus:ring-4 focus:ring-green-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                                            Изпращане...
-                                        </>
-                                    ) : (
-                                        'Да, потвърди поръчката'
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Zoom modal */}
             {zoomedImage && (
                 <div className="fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setZoomedImage(null)}>
                     <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setZoomedImage(null)} className="absolute -top-14 right-0 text-white hover:text-yellow-400 transition-colors bg-slate-800 bg-opacity-70 rounded-full p-3 hover:bg-opacity-90">
+                        <button onClick={() => setZoomedImage(null)} className="absolute -top-14 right-0 text-white hover:text-yellow-400 transition-colors bg-sале-800 bg-opacity-70 rounded-full p-3 hover:bg-opacity-90">
                             <X className="w-6 h-6" />
                         </button>
                         <img src={zoomedImage.image} alt={zoomedImage.name} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border-4 border-white" />
@@ -507,4 +386,4 @@ const ProductOrderFormNoName = () => {
     );
 };
 
-export default ProductOrderFormNoName;
+export default ProductOrderForm;

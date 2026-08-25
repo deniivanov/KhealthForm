@@ -2,15 +2,41 @@
 import React, { useState } from 'react';
 import { Sparkles, Home, Heart, BookOpen, Activity, Cloud, Play, Check, X } from 'lucide-react';
 
+interface VocabularyWord {
+    word: string;
+    bg: string;
+    type: string;
+    image: string;
+}
+
+interface VocabularyCategory {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    words: VocabularyWord[];
+}
+
+type AnswerResult = 'correct' | 'sortOf' | 'wrong';
+
+interface Answer {
+    word: VocabularyWord;
+    result: AnswerResult;
+}
+
+interface Score {
+    correct: number;
+    sortOf: number;
+    wrong: number;
+}
+
 const EnglishLearningGame = () => {
     const [gameMode, setGameMode] = useState('menu');
-    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [score, setScore] = useState({ correct: 0, sortOf: 0, wrong: 0 });
-    const [answers, setAnswers] = useState([]);
+    const [score, setScore] = useState<Score>({ correct: 0, sortOf: 0, wrong: 0 });
+    const [answers, setAnswers] = useState<Answer[]>([]);
     const [showEnglish, setShowEnglish] = useState(false);
 
-    const vocabulary = {
+    const vocabulary: Record<string, VocabularyCategory> = {
         'Home & Family': {
             icon: Home,
             color: 'bg-blue-500',
@@ -99,7 +125,7 @@ const EnglishLearningGame = () => {
 
     const currentWords = selectedCategory ? vocabulary[selectedCategory].words : [];
 
-    const handleAnswer = (result) => {
+    const handleAnswer = (result: AnswerResult) => {
         const newAnswers = [...answers, { word: currentWords[currentQuestion], result }];
         setAnswers(newAnswers);
 
@@ -125,7 +151,7 @@ const EnglishLearningGame = () => {
         setAnswers([]);
     };
 
-    const startCategory = (category) => {
+    const startCategory = (category: string | null) => {
         setSelectedCategory(category);
         setGameMode('quiz');
         setCurrentQuestion(0);

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../../globals.css";
 
@@ -16,7 +17,7 @@ export const metadata = {
   description: "Форма за поръчка на екипи за спортни клубове на марката KHealth",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body

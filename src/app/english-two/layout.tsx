@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 
@@ -16,6 +17,6 @@ export const metadata = {
     description: "English learning game for kids",
 };
 
-export default function EnglishLayout({ children }) {
+export default function EnglishLayout({ children }: { children: ReactNode }) {
     return <>{children}</>;
 }

@@ -1,7 +1,7 @@
 import ProductOrderForm from "../../../components/ProductOrderForm";
 
 // Normalize: "eva" -> "Eva", "john-doe" -> "John Doe", "ivan_ivanov" -> "Ivan Ivanov"
-function normalizeName(raw) {
+function normalizeName(raw: string): string {
     try {
         const decoded = decodeURIComponent(raw || "");
         return decoded
@@ -14,7 +14,7 @@ function normalizeName(raw) {
     }
 }
 
-export default function TrainerNamePage({ params }) {
-    const name = normalizeName(params?.name);
-    return <ProductOrderForm initialName={name} lockName={true} />;
+export default async function TrainerNamePage({ params }: { params: Promise<{ name: string }> }) {
+    const { name } = await params;
+    return <ProductOrderForm initialName={normalizeName(name)} lockName={true} />;
 }

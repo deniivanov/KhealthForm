@@ -5,6 +5,13 @@ import { Sparkles, Star, Trophy, Volume2, Eye, EyeOff, Home as HomeIcon, RotateC
 // Import vocabulary data - you can move this to a separate file
 import vocabulary from '../vocabularyData';
 
+interface VocabularyWord {
+    word: string;
+    translation: string;
+    level: number;
+    category: string;
+}
+
 const VocabularyTest = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [knownWords, setKnownWords] = useState(new Set());
@@ -12,7 +19,7 @@ const VocabularyTest = () => {
     const [showTranslation, setShowTranslation] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const [filterLevel, setFilterLevel] = useState('all');
-    const [filteredWords, setFilteredWords] = useState([]);
+    const [filteredWords, setFilteredWords] = useState<VocabularyWord[]>([]);
 
     // 1000 common English words - abbreviated for demo, expand to full list
     // const vocabulary = [
@@ -94,7 +101,7 @@ const VocabularyTest = () => {
         ? Math.round((knownWords.size / (knownWords.size + unknownWords.size)) * 100) || 0
         : 0;
 
-    const speak = (text) => {
+    const speak = (text: string) => {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);

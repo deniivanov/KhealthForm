@@ -2,11 +2,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import axios from 'axios';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import type { LegacyOrder } from '@/lib/legacy-types';
 
 const ProductSizeSummary = () => {
-    const [ordersData, setOrdersData] = useState([]);
+    const [ordersData, setOrdersData] = useState<LegacyOrder[]>([]);
     const [loading, setLoading] = useState(true);
-    const [expandedOrders, setExpandedOrders] = useState({});
+    const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         async function fetchOrders() {
@@ -32,7 +33,7 @@ const ProductSizeSummary = () => {
         fetchOrders();
     }, []);
 
-    const toggleOrder = (orderId) => {
+    const toggleOrder = (orderId: string) => {
         setExpandedOrders(prev => ({
             ...prev,
             [orderId]: !prev[orderId]
@@ -40,7 +41,7 @@ const ProductSizeSummary = () => {
     };
 
     const summaryData = useMemo(() => {
-        const summary = {};
+        const summary: Record<string, Record<string, number>> = {};
 
         ordersData.forEach(order => {
             order.products.forEach(product => {
@@ -62,7 +63,7 @@ const ProductSizeSummary = () => {
     }, [ordersData]);
 
     const allSizes = useMemo(() => {
-        const sizes = new Set();
+        const sizes = new Set<string>();
         ordersData.forEach(order => {
             order.products.forEach(p => sizes.add(p.size));
         });
@@ -77,7 +78,7 @@ const ProductSizeSummary = () => {
     }, [ordersData]);
 
     const productNames = useMemo(() => {
-        const products = new Set();
+        const products = new Set<string>();
         ordersData.forEach(order => {
             order.products.forEach(p => {
                 const productKey = `${p.name} (${p.color || 'N/A'})`;
@@ -88,7 +89,7 @@ const ProductSizeSummary = () => {
     }, [ordersData]);
 
     const sizeTotals = useMemo(() => {
-        const totals = {};
+        const totals: Record<string, number> = {};
         allSizes.forEach(size => {
             totals[size] = productNames.reduce((sum, productName) => {
                 return sum + (summaryData.summary[productName]?.[size] || 0);
@@ -98,7 +99,7 @@ const ProductSizeSummary = () => {
     }, [summaryData, allSizes, productNames]);
 
     const productTotals = useMemo(() => {
-        const totals = {};
+        const totals: Record<string, number> = {};
         productNames.forEach(name => {
             totals[name] = Object.values(summaryData.summary[name] || {}).reduce((a, b) => a + b, 0);
         });
@@ -109,7 +110,7 @@ const ProductSizeSummary = () => {
 
     const perOrderSummary = useMemo(() => {
         return ordersData.map(order => {
-            const orderMap = {};
+            const orderMap: Record<string, Record<string, number>> = {};
             let orderTotal = 0;
 
             order.products.forEach(p => {
@@ -163,8 +164,8 @@ const ProductSizeSummary = () => {
 
                     {perOrderSummary.map(order => {
                         // Calculate order summary by product
-                        const orderProductSummary = {};
-                        const orderSizeSummary = {};
+                        const orderProductSummary: Record<string, number> = {};
+                        const orderSizeSummary: Record<string, number> = {};
 
                         Object.entries(order.summary).forEach(([size, products]) => {
                             Object.entries(products).forEach(([productName, qty]) => {
