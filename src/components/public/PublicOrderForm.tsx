@@ -295,6 +295,17 @@ const PublicOrderForm = ({
                                 )}
                             </div>
 
+                            {team.logoUrl && (
+                                <div className="flex justify-center" style={{ padding: '24px 20px 0' }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={team.logoUrl}
+                                        alt={team.name}
+                                        style={{ height: 72, maxWidth: 220, objectFit: 'contain' }}
+                                    />
+                                </div>
+                            )}
+
                             <div style={{ padding: '20px 20px 4px' }}>
                                 <h6>{dict.kicker}</h6>
                                 <h3 style={{ marginBottom: 6 }}>{form.title}</h3>

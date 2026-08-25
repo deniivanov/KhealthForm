@@ -67,6 +67,12 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
                         <div className="nav">
                             <span className="nav-brand">{team.name}</span>
                         </div>
+                        {team.logoUrl && (
+                            <div className="flex justify-center" style={{ padding: '24px 20px 0' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={team.logoUrl} alt={team.name} style={{ height: 72, maxWidth: 220, objectFit: 'contain' }} />
+                            </div>
+                        )}
                         <div style={{ padding: '28px 20px' }}>
                             <h6>{dict.kicker}</h6>
                             <h2 style={{ marginBottom: 8 }}>
