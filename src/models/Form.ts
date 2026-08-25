@@ -22,6 +22,7 @@ export interface FormItemData {
     productId: Types.ObjectId;
     sku: string;
     name: string;
+    description?: string;
     images: string[];
     /** EUR cents; catalog base price or per-team override */
     priceCents: number;
@@ -69,6 +70,7 @@ const FormItemSchema = new Schema<FormItemData>(
         productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
         sku: { type: String, required: true, trim: true },
         name: { type: String, required: true, trim: true },
+        description: { type: String, trim: true },
         images: { type: [String], default: [] },
         priceCents: { type: Number, required: true, min: 0 },
         dimensions: { type: [String], default: [] },

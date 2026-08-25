@@ -35,6 +35,7 @@ async function buildSnapshotItems(data: ValidatedFormInput): Promise<FormItemDat
             productId: product._id as Types.ObjectId,
             sku: product.sku,
             name: product.name,
+            description: product.description,
             images: product.images,
             priceCents: item.priceOverrideCents ?? product.basePriceCents,
             dimensions: product.dimensions,

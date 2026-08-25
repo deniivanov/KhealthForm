@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { formatCents } from '@/lib/money';
 import type { Dictionary, Locale } from '@/lib/i18n';
 import { submitPublicOrder, type PublicOrderResult } from '@/app/f/[teamSlug]/[formSlug]/actions';
@@ -15,6 +15,7 @@ export interface PublicFormItem {
     _id: string;
     sku: string;
     name: string;
+    description?: string;
     images: string[];
     priceCents: number;
     dimensions: string[];
@@ -51,56 +52,102 @@ function unitPrice(item: PublicFormItem, sizeLabel: string): number {
     return item.priceCents + (size?.priceAdjustmentCents ?? 0);
 }
 
+function defaultSize(item: PublicFormItem): string {
+    return item.sizes[Math.min(2, item.sizes.length - 1)]?.label ?? '';
+}
+
+const EMAIL_RX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const Photo = ({ src, alt, aspect }: { src?: string; alt: string; aspect?: string }) => (
+    <div
+        className="grayscale-photo"
+        style={{ aspectRatio: aspect, background: 'var(--color-surface)', overflow: 'hidden', height: aspect ? undefined : '100%' }}
+    >
+        {src && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        )}
+    </div>
+);
+
 const PublicOrderForm = ({
     team,
     form,
     locale,
     dict,
+    deadline,
 }: {
     team: PublicTeamData;
     form: PublicFormData;
     locale: Locale;
     dict: Dictionary;
+    deadline: string | null;
 }) => {
+    const [view, setView] = useState<'shop' | 'detail'>('shop');
+    const [detailId, setDetailId] = useState<string | null>(null);
+    const [chartOpen, setChartOpen] = useState(false);
     const [selections, setSelections] = useState<Record<string, ItemSelection>>({});
     const [cart, setCart] = useState<CartLine[]>([]);
-    const [chartItem, setChartItem] = useState<PublicFormItem | null>(null);
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [notes, setNotes] = useState('');
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitError, setSubmitError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState<{ reference: string; totalCents: number } | null>(null);
+    const [success, setSuccess] = useState<{ reference: string; totalCents: number; firstName: string } | null>(null);
     const [toast, setToast] = useState('');
+
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const summaryRef = useRef<HTMLDivElement>(null);
+
+    const fmt = (cents: number) => formatCents(cents, locale === 'bg' ? 'bg-BG' : 'en-IE');
+
+    const detail = form.items.find(i => i._id === detailId) ?? form.items[0] ?? null;
+
+    useEffect(() => {
+        if (view === 'detail' && overlayRef.current) overlayRef.current.scrollTop = 0;
+    }, [view, detailId]);
 
     const totalCents = useMemo(
         () => cart.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0),
         [cart]
     );
+    const cartCount = cart.reduce((n, l) => n + l.quantity, 0);
 
     const getSelection = (item: PublicFormItem): ItemSelection =>
-        selections[item._id] ?? { sizeLabel: item.sizes[0]?.label ?? '', quantity: 1, personalization: {} };
+        selections[item._id] ?? { sizeLabel: defaultSize(item), quantity: 1, personalization: {} };
 
     const patchSelection = (item: PublicFormItem, patch: Partial<ItemSelection>) => {
         setSelections(prev => ({ ...prev, [item._id]: { ...getSelection(item), ...patch } }));
     };
 
+    const showToast = (msg: string) => {
+        clearTimeout(toastTimer.current);
+        setToast(msg);
+        toastTimer.current = setTimeout(() => setToast(''), 2200);
+    };
+
+    const openDetail = (item: PublicFormItem) => {
+        setDetailId(item._id);
+        setView('detail');
+    };
+
     const addToCart = (item: PublicFormItem) => {
         const sel = getSelection(item);
-        const errors: Record<string, string> = {};
+        const fieldErrors: Record<string, string> = {};
         for (const field of item.personalization) {
             if (field.required && !(sel.personalization[field.key] ?? '').trim()) {
-                errors[`${item._id}.${field.key}`] = dict.errRequired;
+                fieldErrors[`${item._id}.${field.key}`] = dict.errRequired;
             }
         }
-        setFieldErrors(prev => {
+        setErrors(prev => {
             const next = { ...prev };
             for (const k of Object.keys(next)) if (k.startsWith(`${item._id}.`)) delete next[k];
-            return { ...next, ...errors };
+            return { ...next, ...fieldErrors };
         });
-        if (Object.keys(errors).length > 0) return;
+        if (Object.keys(fieldErrors).length > 0) return;
 
         const personalization = Object.fromEntries(
             Object.entries(sel.personalization)
@@ -109,13 +156,10 @@ const PublicOrderForm = ({
         );
 
         setCart(prev => {
-            const samePers = (a: Record<string, string>, b: Record<string, string>) =>
+            const same = (a: Record<string, string>, b: Record<string, string>) =>
                 JSON.stringify(a) === JSON.stringify(b);
             const idx = prev.findIndex(
-                l =>
-                    l.formItemId === item._id &&
-                    l.sizeLabel === sel.sizeLabel &&
-                    samePers(l.personalization, personalization)
+                l => l.formItemId === item._id && l.sizeLabel === sel.sizeLabel && same(l.personalization, personalization)
             );
             if (idx > -1) {
                 const next = [...prev];
@@ -134,23 +178,25 @@ const PublicOrderForm = ({
                 },
             ];
         });
-        patchSelection(item, { personalization: {} });
-        setToast(`${item.name} · ${sel.sizeLabel} × ${sel.quantity} ${dict.added}`);
-        setTimeout(() => setToast(''), 2000);
+        patchSelection(item, { personalization: {}, quantity: 1 });
+        setView('shop');
+        showToast(`${item.name} · ${sel.sizeLabel} × ${sel.quantity} ${dict.added}`);
+    };
+
+    const jumpToSummary = () => {
+        summaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const handleSubmit = async () => {
-        const errors: Record<string, string> = {};
-        if (!fullName.trim()) errors.fullName = dict.errName;
-        if (form.requiredMemberFields.phone && !phone.trim()) errors.phone = dict.errPhone;
-        if (form.requiredMemberFields.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
-            errors.email = dict.errEmail;
-        }
-        if (email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) errors.email = dict.errEmail;
-        if (cart.length === 0) errors.cart = dict.errCartEmpty;
-        setFieldErrors(errors);
+        const nextErrors: Record<string, string> = {};
+        if (!fullName.trim()) nextErrors.fullName = dict.errName;
+        if (form.requiredMemberFields.phone && !phone.trim()) nextErrors.phone = dict.errPhone;
+        if (form.requiredMemberFields.email && !EMAIL_RX.test(email.trim())) nextErrors.email = dict.errEmail;
+        if (email.trim() && !EMAIL_RX.test(email.trim())) nextErrors.email = dict.errEmail;
+        if (cart.length === 0) nextErrors.cart = dict.errCartEmpty;
+        setErrors(nextErrors);
         setSubmitError('');
-        if (Object.keys(errors).length > 0) return;
+        if (Object.keys(nextErrors).length > 0) return;
 
         setSubmitting(true);
         let result: PublicOrderResult;
@@ -171,7 +217,11 @@ const PublicOrderForm = ({
         setSubmitting(false);
 
         if (result.ok) {
-            setSuccess({ reference: result.reference, totalCents: result.totalCents });
+            setSuccess({
+                reference: result.reference,
+                totalCents: result.totalCents,
+                firstName: fullName.trim().split(' ')[0],
+            });
             window.scrollTo({ top: 0 });
         } else {
             setSubmitError(
@@ -189,34 +239,34 @@ const PublicOrderForm = ({
     // ── Success view ──
     if (success) {
         return (
-            <div className="max-w-lg mx-auto p-6 pt-16">
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center">
-                    <div
-                        className="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-white text-3xl mb-4"
-                        style={{ backgroundColor: 'var(--brand)' }}
-                    >
-                        ✓
+            <div style={{ paddingBottom: 40 }}>
+                <div className="nav">
+                    <span className="nav-brand">{team.name}</span>
+                </div>
+                <div style={{ padding: '28px 20px' }}>
+                    <h6>{dict.orderReceived}</h6>
+                    <h2 style={{ marginBottom: 8 }}>
+                        {dict.thankYou}, {success.firstName}.
+                    </h2>
+                    <p className="text-muted" style={{ fontSize: 13 }}>{dict.successBody}</p>
+                    <div className="card elev-sm" style={{ margin: '16px 0' }}>
+                        <span className="card-kicker">{dict.reference}</span>
+                        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 28, letterSpacing: '0.02em' }}>
+                            {success.reference}
+                        </span>
+                        <span className="card-meta">
+                            {dict.total} {fmt(success.totalCents)} · {dict.confirmationNote}
+                        </span>
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800 mb-1">{dict.orderReceived}</h1>
-                    <p className="text-slate-600 mb-6">
-                        {dict.thankYou}, <strong>{fullName}</strong>!
-                    </p>
-                    <div className="rounded-xl bg-slate-100 p-4 mb-2">
-                        <p className="text-sm text-slate-500">{dict.reference}</p>
-                        <p className="font-mono text-xl font-bold text-slate-800">{success.reference}</p>
-                    </div>
-                    <p className="text-sm text-slate-500 mb-1">{dict.keepReference}</p>
-                    <p className="font-semibold text-slate-700 mb-6">
-                        {dict.total}: {formatCents(success.totalCents, locale === 'bg' ? 'bg-BG' : 'en-IE')}
-                    </p>
                     <button
+                        type="button"
+                        className="btn btn-secondary btn-block"
+                        style={{ minHeight: 44 }}
                         onClick={() => {
                             setSuccess(null);
                             setCart([]);
                             setNotes('');
                         }}
-                        className="px-6 py-3 rounded-xl font-bold text-slate-800"
-                        style={{ backgroundColor: 'var(--brand-2)' }}
                     >
                         {dict.newOrder}
                     </button>
@@ -225,315 +275,364 @@ const PublicOrderForm = ({
         );
     }
 
-    const fmt = (cents: number) => formatCents(cents, locale === 'bg' ? 'bg-BG' : 'en-IE');
-
     return (
-        <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-40">
-            {/* ── Header ── */}
-            <header className="text-center py-6">
-                {team.logoUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                        src={team.logoUrl}
-                        alt={team.name}
-                        className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-4"
-                        style={{ borderColor: 'var(--brand)' }}
-                    />
-                )}
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800">{team.name}</h1>
-                <p className="text-lg font-semibold text-slate-600 mt-1">{form.title}</p>
-                {form.message && (
-                    <p className="max-w-xl mx-auto mt-3 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl px-4 py-3">
-                        {form.message}
-                    </p>
-                )}
-                {form.closesAt && (
-                    <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--brand)' }}>
-                        {dict.deadline}: {new Date(form.closesAt).toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB')}
-                    </p>
-                )}
-            </header>
+        <>
+            {/* ══ Shop view (stays mounted under the detail overlay) ══ */}
+            <div style={{ paddingBottom: cart.length > 0 ? 88 : 24 }}>
+                <div className="nav">
+                    <span className="nav-brand">{team.name}</span>
+                    {deadline && (
+                        <span className="tag tag-accent" style={{ whiteSpace: 'nowrap' }}>
+                            {dict.closesShort} {deadline}
+                        </span>
+                    )}
+                </div>
 
-            {/* ── Product cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {form.items.map(item => {
-                    const sel = getSelection(item);
-                    return (
-                        <div key={item._id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                            {item.images[0] && (
-                                <div className="bg-slate-100 aspect-square">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
-                                </div>
-                            )}
-                            <div className="p-4 flex flex-col gap-3 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                    <h3 className="font-bold text-slate-800">{item.name}</h3>
-                                    <span className="font-bold whitespace-nowrap" style={{ color: 'var(--brand)' }}>
-                                        {fmt(unitPrice(item, sel.sizeLabel))}
+                {/* Intro */}
+                <div style={{ padding: '20px 20px 4px' }}>
+                    <h6>{dict.kicker}</h6>
+                    <h3 style={{ marginBottom: 6 }}>{form.title}</h3>
+                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
+                        {form.message || dict.tapHint}
+                    </p>
+                </div>
+
+                {/* Product grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 12px', padding: '16px 20px' }}>
+                    {form.items.map(item => (
+                        <div
+                            key={item._id}
+                            onClick={() => openDetail(item)}
+                            style={{ cursor: 'pointer', background: 'var(--color-surface)' }}
+                        >
+                            <Photo src={item.images[0]} alt={item.name} aspect="3 / 4" />
+                            <div style={{ padding: '10px 12px 12px' }}>
+                                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 14 }}>
+                                    {item.name}
+                                </span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 2 }}>
+                                    <span className="text-muted" style={{ fontSize: 11.5 }}>
+                                        {item.sizes[0]?.label}–{item.sizes[item.sizes.length - 1]?.label}
                                     </span>
+                                    <span style={{ fontWeight: 600, fontSize: 13 }}>{fmt(item.priceCents)}</span>
                                 </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1">{dict.size}</label>
-                                        <select
-                                            value={sel.sizeLabel}
-                                            onChange={e => patchSelection(item, { sizeLabel: e.target.value })}
-                                            className="w-full border-2 border-slate-300 rounded-lg px-2 py-2 text-sm font-semibold text-slate-800"
-                                        >
-                                            {item.sizes.map(s => (
-                                                <option key={s.label} value={s.label}>
-                                                    {s.label}
-                                                    {s.priceAdjustmentCents ? ` (+${fmt(s.priceAdjustmentCents)})` : ''}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1">{dict.quantity}</label>
-                                        <select
-                                            value={sel.quantity}
-                                            onChange={e => patchSelection(item, { quantity: parseInt(e.target.value, 10) })}
-                                            className="w-full border-2 border-slate-300 rounded-lg px-2 py-2 text-sm font-semibold text-slate-800"
-                                        >
-                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                                <option key={n} value={n}>{n}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {item.dimensions.length > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setChartItem(item)}
-                                        className="text-sm font-semibold underline text-left"
-                                        style={{ color: 'var(--brand)' }}
-                                    >
-                                        📏 {dict.sizeChart}
-                                    </button>
+                {/* Your order */}
+                <div ref={summaryRef} style={{ padding: '8px 20px 0', scrollMarginTop: 12 }}>
+                    <hr className="hr" style={{ margin: '0 0 16px' }} />
+                    <h6>{dict.orderSummary}</h6>
+                    {cart.length === 0 && (
+                        <p className="text-muted" style={{ fontSize: 13 }}>{dict.emptyCart}</p>
+                    )}
+                    {cart.map((line, i) => (
+                        <div
+                            key={i}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid var(--color-divider)' }}
+                        >
+                            <div style={{ flex: 1, fontSize: 13 }}>
+                                <span style={{ fontWeight: 600 }}>
+                                    {line.productName} · {line.sizeLabel}
+                                    {line.quantity > 1 ? ` × ${line.quantity}` : ''}
+                                </span>
+                                {Object.values(line.personalization).length > 0 && (
+                                    <span className="text-muted" style={{ display: 'block', fontSize: 11.5 }}>
+                                        {Object.values(line.personalization).join(' · ')}
+                                    </span>
                                 )}
-
-                                {item.personalization.map(field => (
-                                    <div key={field.key}>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                                            {field.label}
-                                            {!field.required && <span className="font-normal text-slate-400"> ({dict.optional})</span>}
-                                        </label>
-                                        <input
-                                            value={sel.personalization[field.key] ?? ''}
-                                            onChange={e =>
-                                                patchSelection(item, {
-                                                    personalization: { ...sel.personalization, [field.key]: e.target.value },
-                                                })
-                                            }
-                                            inputMode={field.type === 'number' ? 'numeric' : 'text'}
-                                            maxLength={field.type === 'number' ? 4 : 80}
-                                            className="w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800"
-                                        />
-                                        {fieldErrors[`${item._id}.${field.key}`] && (
-                                            <p className="text-xs text-red-600 mt-1">{fieldErrors[`${item._id}.${field.key}`]}</p>
-                                        )}
-                                    </div>
-                                ))}
-
-                                <button
-                                    type="button"
-                                    onClick={() => addToCart(item)}
-                                    className="mt-auto w-full py-2.5 rounded-xl font-bold text-slate-800 hover:opacity-90 transition-opacity"
-                                    style={{ backgroundColor: 'var(--brand-2)' }}
-                                >
-                                    {dict.addToOrder}
-                                </button>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* ── Cart + contact ── */}
-            <div id="order-summary" className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-6">
-                <h2 className="text-xl font-bold text-slate-800 border-b-4 pb-2 mb-4" style={{ borderColor: 'var(--brand)' }}>
-                    {dict.orderSummary}
-                </h2>
-
-                {cart.length === 0 ? (
-                    <p className="text-slate-500 text-sm">{dict.emptyCart}</p>
-                ) : (
-                    <div className="space-y-2">
-                        {cart.map((line, i) => (
-                            <div key={i} className="flex items-center justify-between gap-2 bg-slate-50 rounded-lg px-3 py-2">
-                                <div className="text-sm text-slate-700">
-                                    <span className="font-semibold">{line.productName}</span> — {line.sizeLabel} × {line.quantity}
-                                    {Object.entries(line.personalization).length > 0 && (
-                                        <span className="block text-xs text-slate-500">
-                                            {Object.values(line.personalization).join(' · ')}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2 whitespace-nowrap">
-                                    <span className="text-sm font-semibold text-slate-800">{fmt(line.unitPriceCents * line.quantity)}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setCart(cart.filter((_, j) => j !== i))}
-                                        className="text-slate-400 hover:text-red-500"
-                                        title={dict.remove}
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                        <div className="flex justify-between items-center pt-3 text-lg font-bold text-slate-800">
-                            <span>{dict.total}:</span>
-                            <span>{fmt(totalCents)}</span>
-                        </div>
-                    </div>
-                )}
-                {fieldErrors.cart && <p className="text-sm text-red-600 mt-2">{fieldErrors.cart}</p>}
-
-                <h3 className="text-lg font-bold text-slate-800 mt-6 mb-3">{dict.contactDetails}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">{dict.fullName} *</label>
-                        <input
-                            value={fullName}
-                            onChange={e => setFullName(e.target.value)}
-                            className="w-full border-2 border-slate-300 rounded-lg px-3 py-2.5 text-slate-800"
-                            autoComplete="name"
-                        />
-                        {fieldErrors.fullName && <p className="text-xs text-red-600 mt-1">{fieldErrors.fullName}</p>}
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">
-                            {dict.phone} {form.requiredMemberFields.phone ? '*' : `(${dict.optional})`}
-                        </label>
-                        <input
-                            value={phone}
-                            onChange={e => setPhone(e.target.value)}
-                            className="w-full border-2 border-slate-300 rounded-lg px-3 py-2.5 text-slate-800"
-                            inputMode="tel"
-                            autoComplete="tel"
-                        />
-                        {fieldErrors.phone && <p className="text-xs text-red-600 mt-1">{fieldErrors.phone}</p>}
-                    </div>
-                    <div className="sm:col-span-2">
-                        <label className="block text-sm font-bold text-slate-700 mb-1">
-                            {dict.email} {form.requiredMemberFields.email ? '*' : `(${dict.optional})`}
-                        </label>
-                        <input
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            className="w-full border-2 border-slate-300 rounded-lg px-3 py-2.5 text-slate-800"
-                            type="email"
-                            autoComplete="email"
-                        />
-                        {fieldErrors.email && <p className="text-xs text-red-600 mt-1">{fieldErrors.email}</p>}
-                    </div>
-                    <div className="sm:col-span-2">
-                        <label className="block text-sm font-bold text-slate-700 mb-1">
-                            {dict.notes} ({dict.optional})
-                        </label>
-                        <textarea
-                            value={notes}
-                            onChange={e => setNotes(e.target.value)}
-                            rows={2}
-                            placeholder={dict.notesPlaceholder}
-                            className="w-full border-2 border-slate-300 rounded-lg px-3 py-2.5 text-slate-800"
-                        />
-                    </div>
-                </div>
-
-                {submitError && <p className="text-red-600 font-medium mt-4">{submitError}</p>}
-
-                <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="mt-5 w-full py-3.5 rounded-xl font-bold text-lg text-slate-800 hover:opacity-90 disabled:opacity-60 transition-opacity"
-                    style={{ backgroundColor: 'var(--brand-2)' }}
-                >
-                    {submitting ? dict.submitting : dict.submit}
-                </button>
-            </div>
-
-            {/* ── Sticky total bar (mobile) ── */}
-            {cart.length > 0 && (
-                <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-lg p-3 sm:hidden">
-                    <a
-                        href="#order-summary"
-                        className="flex items-center justify-between px-4 py-2.5 rounded-xl font-bold text-slate-800"
-                        style={{ backgroundColor: 'var(--brand-2)' }}
-                    >
-                        <span>{dict.orderSummary} ({cart.reduce((n, l) => n + l.quantity, 0)})</span>
-                        <span>{fmt(totalCents)}</span>
-                    </a>
-                </div>
-            )}
-
-            {/* ── Size chart modal ── */}
-            {chartItem && (
-                <div
-                    className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
-                    onClick={() => setChartItem(null)}
-                >
-                    <div
-                        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl p-5 max-h-[80vh] overflow-y-auto"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold text-slate-800">
-                                {dict.sizeChart} — {chartItem.name}
-                            </h3>
-                            <button onClick={() => setChartItem(null)} className="text-slate-400 hover:text-slate-700 text-xl px-2">
-                                ✕
+                            <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
+                                {fmt(line.unitPriceCents * line.quantity)}
+                            </span>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => setCart(cart.filter((_, j) => j !== i))}
+                                title={dict.remove}
+                                style={{ width: 30, height: 30, padding: 0, fontSize: 14, lineHeight: 1 }}
+                            >
+                                ×
                             </button>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b-2" style={{ borderColor: 'var(--brand)' }}>
-                                        <th className="text-left py-2 pr-3 font-bold text-slate-700">{dict.size}</th>
-                                        {chartItem.dimensions.map(d => (
-                                            <th key={d} className="text-right py-2 px-3 font-bold text-slate-700 whitespace-nowrap">
-                                                {measurementLabel(d)} ({dict.cm})
-                                            </th>
+                    ))}
+                    {cart.length > 0 && (
+                        <div
+                            style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 16, borderBottom: '2px solid var(--color-divider)' }}
+                        >
+                            <span>{dict.total}</span>
+                            <span>{fmt(totalCents)}</span>
+                        </div>
+                    )}
+                    {errors.cart && <p className="field-error" style={{ margin: '8px 0 0' }}>{errors.cart}</p>}
+                </div>
+
+                {/* Contact */}
+                <div style={{ padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <h6 style={{ margin: 0 }}>{dict.contactDetails}</h6>
+                    <div className="field">
+                        <label>{dict.fullName} *</label>
+                        <input className="input" value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" />
+                        {errors.fullName && <p className="field-error">{errors.fullName}</p>}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div className="field">
+                            <label>
+                                {dict.phone} {form.requiredMemberFields.phone ? '*' : `(${dict.optional})`}
+                            </label>
+                            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" />
+                            {errors.phone && <p className="field-error">{errors.phone}</p>}
+                        </div>
+                        <div className="field">
+                            <label>
+                                {dict.email} {form.requiredMemberFields.email ? '*' : `(${dict.optional})`}
+                            </label>
+                            <input className="input" value={email} onChange={e => setEmail(e.target.value)} type="email" autoComplete="email" />
+                            {errors.email && <p className="field-error">{errors.email}</p>}
+                        </div>
+                    </div>
+                    <div className="field">
+                        <label>
+                            {dict.notes} ({dict.optional})
+                        </label>
+                        <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder={dict.notesPlaceholder} />
+                    </div>
+                    {submitError && (
+                        <p style={{ color: 'var(--color-accent-700)', fontSize: 13, fontWeight: 600, margin: 0 }}>{submitError}</p>
+                    )}
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-block"
+                        style={{ minHeight: 46 }}
+                        disabled={submitting}
+                        onClick={handleSubmit}
+                    >
+                        {submitting ? dict.submitting : `${dict.submit} — ${fmt(totalCents)}`}
+                    </button>
+                    <p className="text-muted" style={{ fontSize: 11, margin: '0 0 12px' }}>{dict.referenceNote}</p>
+                </div>
+            </div>
+
+            {/* ══ Sticky bottom bar ══ */}
+            {view === 'shop' && cart.length > 0 && (
+                <div
+                    style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(480px, 100vw)', zIndex: 30, background: 'var(--color-surface)', borderTop: '2px solid var(--color-divider)', padding: '10px 20px' }}
+                >
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-block"
+                        style={{ minHeight: 44, margin: 0, display: 'flex', justifyContent: 'space-between' }}
+                        onClick={jumpToSummary}
+                    >
+                        <span>
+                            {dict.reviewOrder} ({cartCount})
+                        </span>
+                        <span>{fmt(totalCents)}</span>
+                    </button>
+                </div>
+            )}
+
+            {/* ══ Product detail slide-in ══ */}
+            <div
+                ref={overlayRef}
+                className="detail-overlay"
+                data-open={view === 'detail'}
+                aria-hidden={view !== 'detail'}
+                inert={view !== 'detail'}
+            >
+                {detail && (
+                    <>
+                        <div
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', borderBottom: '2px solid var(--color-divider)', position: 'sticky', top: 0, background: 'var(--color-bg)', zIndex: 2 }}
+                        >
+                            <button type="button" className="btn btn-ghost" onClick={() => setView('shop')}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M15 18l-6-6 6-6" />
+                                </svg>
+                                {dict.backToOrder}
+                            </button>
+                        </div>
+                        {(() => {
+                            const sel = getSelection(detail);
+                            const unit = unitPrice(detail, sel.sizeLabel);
+                            const thumbs = detail.images.slice(1, 3);
+                            const adjustedSizes = detail.sizes.filter(s => s.priceAdjustmentCents);
+                            return (
+                                <div style={{ padding: '16px 20px 40px' }}>
+                                    {/* Gallery */}
+                                    {thumbs.length > 0 ? (
+                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 2 }}>
+                                            <Photo src={detail.images[0]} alt={detail.name} aspect="3 / 4" />
+                                            <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 2 }}>
+                                                {thumbs.map((src, i) => (
+                                                    <Photo key={i} src={src} alt={detail.name} />
+                                                ))}
+                                                {thumbs.length === 1 && <div style={{ background: 'var(--color-surface)' }} />}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <Photo src={detail.images[0]} alt={detail.name} aspect="3 / 4" />
+                                    )}
+
+                                    {/* Title + price */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 16 }}>
+                                        <h3 style={{ margin: 0 }}>{detail.name}</h3>
+                                        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 20, whiteSpace: 'nowrap' }}>
+                                            {fmt(unit)}
+                                        </span>
+                                    </div>
+                                    {detail.description && (
+                                        <p className="text-muted" style={{ fontSize: 13, margin: '8px 0 16px' }}>{detail.description}</p>
+                                    )}
+
+                                    {/* Size */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '16px 0 8px' }}>
+                                        <h6 style={{ margin: 0 }}>{dict.size}</h6>
+                                        {detail.dimensions.length > 0 && (
+                                            <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setChartOpen(true)}>
+                                                {dict.sizeChart}
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="seg" style={{ flexWrap: 'wrap' }}>
+                                        {detail.sizes.map(s => (
+                                            <button
+                                                key={s.label}
+                                                type="button"
+                                                className="seg-opt"
+                                                data-selected={sel.sizeLabel === s.label}
+                                                style={{ minWidth: 44, minHeight: 38 }}
+                                                onClick={() => patchSelection(detail, { sizeLabel: s.label })}
+                                            >
+                                                {s.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {adjustedSizes.length > 0 && (
+                                        <p className="text-muted" style={{ fontSize: 11.5, margin: '6px 0 0' }}>
+                                            {adjustedSizes.map(s => `${s.label} ${dict.adds} ${fmt(s.priceAdjustmentCents!)}`).join(' · ')}
+                                        </p>
+                                    )}
+
+                                    {/* Personalization */}
+                                    {detail.personalization.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                                            {detail.personalization.map(field => (
+                                                <div className="field" key={field.key}>
+                                                    <label>
+                                                        {field.label} {field.required ? '*' : `(${dict.optional})`}
+                                                    </label>
+                                                    <input
+                                                        className="input"
+                                                        value={sel.personalization[field.key] ?? ''}
+                                                        maxLength={field.type === 'number' ? 4 : 80}
+                                                        inputMode={field.type === 'number' ? 'numeric' : 'text'}
+                                                        onChange={e =>
+                                                            patchSelection(detail, {
+                                                                personalization: {
+                                                                    ...sel.personalization,
+                                                                    [field.key]:
+                                                                        field.type === 'number'
+                                                                            ? e.target.value.replace(/\D/g, '')
+                                                                            : e.target.value,
+                                                                },
+                                                            })
+                                                        }
+                                                    />
+                                                    {errors[`${detail._id}.${field.key}`] && (
+                                                        <p className="field-error">{errors[`${detail._id}.${field.key}`]}</p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Qty + add */}
+                                    <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+                                        <div className="seg">
+                                            <button
+                                                type="button"
+                                                className="seg-opt"
+                                                data-selected="false"
+                                                style={{ minWidth: 40, minHeight: 44 }}
+                                                onClick={() => patchSelection(detail, { quantity: Math.max(1, sel.quantity - 1) })}
+                                            >
+                                                −
+                                            </button>
+                                            <span className="seg-opt" data-selected="false" style={{ minWidth: 36, minHeight: 44, fontWeight: 700, cursor: 'default' }}>
+                                                {sel.quantity}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="seg-opt"
+                                                data-selected="false"
+                                                style={{ minWidth: 40, minHeight: 44 }}
+                                                onClick={() => patchSelection(detail, { quantity: Math.min(10, sel.quantity + 1) })}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            style={{ flex: 1, minHeight: 44 }}
+                                            onClick={() => addToCart(detail)}
+                                        >
+                                            {dict.addToOrder} — {fmt(unit * sel.quantity)}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </>
+                )}
+            </div>
+
+            {/* ══ Size chart dialog ══ */}
+            {chartOpen && detail && (
+                <div className="dialog-backdrop" style={{ zIndex: 60 }} onClick={() => setChartOpen(false)}>
+                    <div className="dialog" onClick={e => e.stopPropagation()}>
+                        <span className="dialog-title">
+                            {dict.sizeChart} — {detail.name}
+                        </span>
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>{dict.size}</th>
+                                    {detail.dimensions.map(d => (
+                                        <th key={d} style={{ textAlign: 'right' }}>
+                                            {measurementLabel(d)} ({dict.cm})
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {detail.sizes.map(s => (
+                                    <tr key={s.label}>
+                                        <td style={{ fontWeight: 600 }}>{s.label}</td>
+                                        {detail.dimensions.map(d => (
+                                            <td key={d} style={{ textAlign: 'right' }}>
+                                                {s.measurements?.[d] ?? '—'}
+                                            </td>
                                         ))}
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {chartItem.sizes.map(s => (
-                                        <tr key={s.label} className="border-b border-slate-100">
-                                            <td className="py-2 pr-3 font-semibold text-slate-800">{s.label}</td>
-                                            {chartItem.dimensions.map(d => (
-                                                <td key={d} className="py-2 px-3 text-right text-slate-600">
-                                                    {s.measurements?.[d] ?? '—'}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div className="dialog-actions">
+                            <button type="button" className="btn btn-secondary" onClick={() => setChartOpen(false)}>
+                                {dict.close}
+                            </button>
                         </div>
-                        <button
-                            onClick={() => setChartItem(null)}
-                            className="mt-4 w-full py-2.5 rounded-xl font-bold text-slate-800"
-                            style={{ backgroundColor: 'var(--brand-2)' }}
-                        >
-                            {dict.close}
-                        </button>
                     </div>
                 </div>
             )}
 
-            {/* ── Toast ── */}
-            {toast && (
-                <div className="fixed bottom-20 sm:bottom-6 right-4 left-4 sm:left-auto bg-slate-800 text-white text-sm px-4 py-3 rounded-xl shadow-lg z-40">
-                    {toast}
-                </div>
-            )}
-        </div>
+            {/* ══ Toast ══ */}
+            {toast && <div className="toast">{toast}</div>}
+        </>
     );
 };
 

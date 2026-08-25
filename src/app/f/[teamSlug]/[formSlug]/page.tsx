@@ -5,7 +5,7 @@ import connectDB from '@/lib/db';
 import Team from '@/models/Team';
 import Form from '@/models/Form';
 import { isFormAcceptingOrders } from '@/lib/orders';
-import { getDictionary } from '@/lib/i18n';
+import { getDictionary, type Locale } from '@/lib/i18n';
 import { toPlain } from '@/lib/serialize';
 import PublicOrderForm, {
     type PublicFormData,
@@ -22,6 +22,14 @@ interface PageProps {
     searchParams: Promise<{ lang?: string }>;
 }
 
+function formatDeadline(date: Date | string, locale: Locale): string {
+    return new Date(date).toLocaleDateString(locale === 'bg' ? 'bg-BG' : 'en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+}
+
 export default async function PublicFormPage({ params, searchParams }: PageProps) {
     const { teamSlug, formSlug } = await params;
     const { lang } = await searchParams;
@@ -33,16 +41,16 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
     const form = await Form.findOne({ slug: formSlug, teamId: team._id }).lean();
     if (!form) notFound();
 
-    const brand = team.brandColors?.primary ?? '#facc15';
-    const brandSecondary = team.brandColors?.secondary ?? brand;
     const brandStyle = {
-        '--brand': brand,
-        '--brand-2': brandSecondary,
+        '--brand': team.brandColors?.primary ?? '#e0a400',
     } as React.CSSProperties;
 
     const langToggle = (
-        <div className="text-center text-sm mt-6 pb-8 text-slate-400">
-            <Link href={`?lang=${locale === 'bg' ? 'en' : 'bg'}`} className="hover:underline">
+        <div className="text-center py-6">
+            <Link
+                href={`?lang=${locale === 'bg' ? 'en' : 'bg'}`}
+                className="text-muted text-xs underline underline-offset-2"
+            >
                 {locale === 'bg' ? 'English' : 'Български'}
             </Link>
         </div>
@@ -52,35 +60,50 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         const notOpenYet =
             form.status === 'open' && form.opensAt && new Date() < new Date(form.opensAt);
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" style={brandStyle}>
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center">
-                    {team.logoUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={team.logoUrl} alt={team.name} className="w-16 h-16 rounded-full object-cover mx-auto mb-4 border-2" style={{ borderColor: 'var(--brand)' }} />
-                    )}
-                    <h1 className="text-xl font-bold text-slate-800 mb-2">{team.name}</h1>
-                    <p className="font-semibold text-slate-700 mb-4">{form.title}</p>
-                    <div className="rounded-xl bg-slate-100 p-4">
-                        <p className="font-bold text-slate-800 mb-1">{dict.formClosedTitle}</p>
-                        <p className="text-sm text-slate-600">
-                            {notOpenYet ? dict.formNotOpenYet : dict.formClosedBody}
-                        </p>
+            <div className="modernist min-h-screen" style={{ ...brandStyle, background: 'var(--color-neutral-200)' }}>
+                <div className="elev-md mx-auto min-h-screen" style={{ maxWidth: 480, background: 'var(--color-bg)' }}>
+                    <div style={{ paddingBottom: 40 }}>
+                        <div className="nav">
+                            <span className="nav-brand">{team.name}</span>
+                        </div>
+                        <div style={{ padding: '28px 20px' }}>
+                            <h6>{dict.kicker}</h6>
+                            <h2 style={{ marginBottom: 8 }}>
+                                {notOpenYet ? dict.formNotOpenYet : dict.formClosedTitle}
+                            </h2>
+                            <p className="text-muted" style={{ fontSize: 13, marginBottom: 16 }}>
+                                {notOpenYet
+                                    ? dict.formClosedBody
+                                    : form.closesAt
+                                      ? `${dict.closedOn} ${formatDeadline(form.closesAt, locale)}. ${dict.missedDeadline}`
+                                      : `${dict.formClosedBody} ${dict.missedDeadline}`}
+                            </p>
+                            <hr className="hr" />
+                            {team.email && (
+                                <span className="card-meta">
+                                    {dict.questions} — {team.email}
+                                </span>
+                            )}
+                        </div>
                     </div>
+                    {langToggle}
                 </div>
-                {langToggle}
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50" style={brandStyle}>
-            <PublicOrderForm
-                team={toPlain<PublicTeamData>(team)}
-                form={toPlain<PublicFormData>(form)}
-                locale={locale}
-                dict={dict}
-            />
-            {langToggle}
+        <div className="modernist min-h-screen" style={{ ...brandStyle, background: 'var(--color-neutral-200)' }}>
+            <div className="elev-md mx-auto min-h-screen relative" style={{ maxWidth: 480, background: 'var(--color-bg)' }}>
+                <PublicOrderForm
+                    team={toPlain<PublicTeamData>(team)}
+                    form={toPlain<PublicFormData>(form)}
+                    locale={locale}
+                    dict={dict}
+                    deadline={form.closesAt ? formatDeadline(form.closesAt, locale) : null}
+                />
+                {langToggle}
+            </div>
         </div>
     );
 }

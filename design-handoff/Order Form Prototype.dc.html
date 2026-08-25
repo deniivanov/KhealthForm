@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/modernist-e4f57a02-a628-4e03-8684-68ecad7419ad/styles.css">
+<script src="_ds/modernist-e4f57a02-a628-4e03-8684-68ecad7419ad/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+/* Team brand mapped onto the Modernist accent role — in Next.js --brand comes from team.brandColors.primary */
+:root{--brand:#e0a400;
+--color-accent:var(--brand);
+--color-accent-100:color-mix(in oklab,var(--brand),white 88%);
+--color-accent-200:color-mix(in oklab,var(--brand),white 72%);
+--color-accent-600:color-mix(in oklab,var(--brand),black 12%);
+--color-accent-700:color-mix(in oklab,var(--brand),black 35%);
+--color-accent-800:color-mix(in oklab,var(--brand),black 50%);}
+.btn-primary,.btn-primary:hover,.btn-primary:active,.seg-opt:has(input:checked){color:var(--color-text)}
+body{margin:0;background:var(--color-neutral-200)}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="max-width:480px;margin:0 auto;min-height:100vh;background:var(--color-bg);font-family:var(--font-body);position:relative;box-shadow:var(--shadow-md)">
+
+<sc-if value="{{ closedView }}" hint-placeholder-val="{{ false }}">
+  <div style="padding-bottom:40px">
+    <div class="nav"><span class="nav-brand">{{ teamName }}</span></div>
+    <div style="padding:28px 20px">
+      <h6 style="color:var(--color-accent-700)">Team kit order</h6>
+      <h2 style="margin-bottom:8px">Orders are closed.</h2>
+      <p class="text-muted" style="font-size:13px;margin-bottom:16px">This form stopped accepting orders on {{ deadline }}. Contact your coach if you missed the deadline.</p>
+      <hr class="hr">
+      <span class="card-meta">Questions — orders@team.example</span>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ successView }}" hint-placeholder-val="{{ false }}">
+  <div style="padding-bottom:40px">
+    <div class="nav"><span class="nav-brand">{{ teamName }}</span></div>
+    <div style="padding:28px 20px">
+      <h6 style="color:var(--color-accent-700)">Order received</h6>
+      <h2 style="margin-bottom:8px">Thank you, {{ successName }}.</h2>
+      <p class="text-muted" style="font-size:13px">Your order was submitted to the club. Keep the reference below — you'll need it for pickup and payment.</p>
+      <div class="card elev-sm" style="margin:16px 0">
+        <span class="card-kicker">Reference</span>
+        <span style="font-family:var(--font-heading);font-weight:800;font-size:28px;letter-spacing:.02em">{{ successRef }}</span>
+        <span class="card-meta">Total {{ successTotalFmt }} · confirmation sent if you gave an email</span>
+      </div>
+      <button class="btn btn-secondary btn-block" style="min-height:44px" onClick="{{ onReset }}">Place another order</button>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shopView }}" hint-placeholder-val="{{ true }}">
+  <div style="padding-bottom:88px">
+    <div class="nav"><span class="nav-brand">{{ teamName }}</span><span class="tag tag-accent" style="white-space:nowrap">Closes {{ deadline }}</span></div>
+    <div style="padding:20px 20px 4px">
+      <h6 style="color:var(--color-accent-700)">Team kit order</h6>
+      <h3 style="margin-bottom:6px">Season 2026/27</h3>
+      <p class="text-muted" style="font-size:13px;margin:0">Tap a piece to see details and add it to your order. Payment is collected by the club.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 12px;padding:16px 20px;background:var(--color-bg)">
+      <sc-for list="{{ products }}" as="p" hint-placeholder-count="4">
+        <div onClick="{{ p.open }}" style="cursor:pointer;background:var(--color-surface)">
+          <div class="grayscale" style="aspect-ratio:3/4;position:relative">
+            <image-slot id="photo-{{ p.sku }}" shape="rect" placeholder="{{ p.placeholder }}"></image-slot>
+          </div>
+          <div style="padding:10px 12px 12px">
+            <div style="display:flex;justify-content:space-between;gap:6px;align-items:baseline">
+              <span style="font-family:var(--font-heading);font-weight:800;font-size:14px">{{ p.name }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:2px">
+              <span class="text-muted" style="font-size:11.5px">{{ p.sizeRange }}</span>
+              <span style="font-weight:600;font-size:13px">{{ p.priceFmt }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div id="order-summary" style="padding:8px 20px 0">
+      <hr class="hr" style="margin:0 0 16px">
+      <h6 style="color:var(--color-accent-700)">Your order</h6>
+      <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+        <p class="text-muted" style="font-size:13px">Nothing yet — tap a product above to add it.</p>
+      </sc-if>
+      <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="0">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--color-divider)">
+          <div style="flex:1;font-size:13px"><span style="font-weight:600">{{ l.label }}</span><span class="text-muted" style="display:block;font-size:11.5px">{{ l.sub }}</span></div>
+          <span style="font-weight:600;font-size:13px;white-space:nowrap">{{ l.priceFmt }}</span>
+          <button class="btn btn-icon btn-secondary" onClick="{{ l.remove }}" title="Remove" style="width:30px;height:30px;font-size:14px;line-height:1">×</button>
+        </div>
+      </sc-for>
+      <sc-if value="{{ hasCart }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;padding:12px 0;font-family:var(--font-heading);font-weight:800;font-size:16px;border-bottom:2px solid var(--color-divider)"><span>Total</span><span>{{ totalFmt }}</span></div>
+      </sc-if>
+      <sc-if value="{{ errCart }}" hint-placeholder-val="{{ false }}"><p style="color:var(--color-accent-700);font-size:12px;margin:8px 0 0">{{ errCart }}</p></sc-if>
+    </div>
+    <div style="padding:20px 20px 8px;display:flex;flex-direction:column;gap:12px">
+      <h6 style="color:var(--color-accent-700);margin:0">Contact</h6>
+      <div class="field"><label>Full name *</label><input class="input" value="{{ fullName }}" onChange="{{ onFullName }}" autoComplete="name">
+        <sc-if value="{{ errName }}" hint-placeholder-val="{{ false }}"><p style="color:var(--color-accent-700);font-size:12px;margin:4px 0 0">{{ errName }}</p></sc-if>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Phone *</label><input class="input" value="{{ phone }}" onChange="{{ onPhone }}" inputMode="tel" autoComplete="tel">
+          <sc-if value="{{ errPhone }}" hint-placeholder-val="{{ false }}"><p style="color:var(--color-accent-700);font-size:12px;margin:4px 0 0">{{ errPhone }}</p></sc-if>
+        </div>
+        <div class="field"><label>Email (optional)</label><input class="input" value="{{ email }}" onChange="{{ onEmail }}" type="email" autoComplete="email">
+          <sc-if value="{{ errEmail }}" hint-placeholder-val="{{ false }}"><p style="color:var(--color-accent-700);font-size:12px;margin:4px 0 0">{{ errEmail }}</p></sc-if>
+        </div>
+      </div>
+      <div class="field"><label>Notes (optional)</label><textarea class="input" rows="2" value="{{ notes }}" onChange="{{ onNotes }}" placeholder="Anything the club should know"></textarea></div>
+      <sc-if value="{{ submitError }}" hint-placeholder-val="{{ false }}"><p style="color:var(--color-accent-700);font-size:13px;font-weight:600;margin:0">{{ submitError }}</p></sc-if>
+      <button class="btn btn-primary btn-block" style="min-height:46px" disabled="{{ submitting }}" onClick="{{ onSubmit }}">{{ submitLabel }}</button>
+      <p class="text-muted" style="font-size:11px;margin:0 0 12px">You will receive a reference number after submitting.</p>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shopView }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ hasCart }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(480px,100vw);z-index:30;background:var(--color-surface);border-top:2px solid var(--color-divider);padding:10px 20px">
+      <button class="btn btn-primary btn-block" style="min-height:44px;margin:0;display:flex;justify-content:space-between" onClick="{{ onJumpToSummary }}"><span>Review order ({{ cartCount }})</span><span>{{ totalFmt }}</span></button>
+    </div>
+  </sc-if>
+</sc-if>
+
+<div style="position:fixed;top:0;bottom:0;left:0;right:0;margin:0 auto;transform:{{ detailTransform }};transition:transform .38s cubic-bezier(.32,.72,.24,1);width:min(480px,100vw);z-index:40;background:var(--color-bg);overflow-y:auto;box-shadow:var(--shadow-lg)">
+  <div style="display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:2px solid var(--color-divider);position:sticky;top:0;background:var(--color-bg);z-index:2">
+    <button class="btn btn-ghost" onClick="{{ onBack }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>Back to order</button>
+  </div>
+  <div style="padding:16px 20px 40px">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:2px">
+      <div class="grayscale" style="aspect-ratio:3/4"><image-slot id="detail-{{ detailSku }}-front" shape="rect" placeholder="front view"></image-slot></div>
+      <div style="display:grid;grid-template-rows:1fr 1fr;gap:2px">
+        <div class="grayscale"><image-slot id="detail-{{ detailSku }}-back" shape="rect" placeholder="back"></image-slot></div>
+        <div class="grayscale"><image-slot id="detail-{{ detailSku }}-detail" shape="rect" placeholder="detail"></image-slot></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:16px">
+      <h3 style="margin:0">{{ detailName }}</h3>
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:20px;white-space:nowrap">{{ detailPriceFmt }}</span>
+    </div>
+    <p class="text-muted" style="font-size:13px;margin:8px 0 16px">{{ detailDesc }}</p>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <h6 style="margin:0">Size</h6>
+      <sc-if value="{{ hasDims }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" style="font-size:12px" onClick="{{ openChart }}">Size chart</button></sc-if>
+    </div>
+    <div class="seg" style="flex-wrap:wrap">
+      <sc-for list="{{ detailSizes }}" as="s" hint-placeholder-count="4">
+        <label class="seg-opt" style="min-width:44px;min-height:38px;justify-content:center"><input type="radio" name="detail-size" checked="{{ s.selected }}" onChange="{{ s.pick }}"><span>{{ s.label }}</span></label>
+      </sc-for>
+    </div>
+    <sc-if value="{{ detailSizeNote }}" hint-placeholder-val="{{ false }}"><p class="text-muted" style="font-size:11.5px;margin:6px 0 0">{{ detailSizeNote }}</p></sc-if>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+      <sc-for list="{{ detailPers }}" as="f" hint-placeholder-count="0">
+        <div class="field"><label>{{ f.labelFull }}</label><input class="input" value="{{ f.value }}" onChange="{{ f.onChange }}" maxLength="{{ f.maxLength }}">
+          <sc-if value="{{ f.err }}" hint-placeholder-val="{{ false }}"><p style="color:var(--color-accent-700);font-size:12px;margin:4px 0 0">{{ f.err }}</p></sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <div class="seg">
+        <button class="seg-opt" style="min-width:40px;min-height:44px;justify-content:center;border:0;background:transparent;font:inherit;cursor:pointer" onClick="{{ qtyMinus }}">−</button>
+        <span class="seg-opt" style="min-width:36px;min-height:44px;justify-content:center;font-weight:700">{{ detailQty }}</span>
+        <button class="seg-opt" style="min-width:40px;min-height:44px;justify-content:center;border:0;background:transparent;font:inherit;cursor:pointer" onClick="{{ qtyPlus }}">+</button>
+      </div>
+      <button class="btn btn-primary" style="flex:1;min-height:44px" onClick="{{ onAdd }}">{{ addLabel }}</button>
+    </div>
+  </div>
+</div>
+
+<sc-if value="{{ chartOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="z-index:60" onClick="{{ closeChart }}">
+    <div class="dialog" onClick="{{ stopClick }}">
+      <span class="dialog-title">Size chart — {{ detailName }}</span>
+      <table class="table" style="font-size:13px">
+        <thead><tr><th>Size</th>
+          <sc-for list="{{ chartDims }}" as="d" hint-placeholder-count="2"><th style="text-align:right">{{ d.label }} (cm)</th></sc-for>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ chartRows }}" as="r" hint-placeholder-count="4">
+            <tr><td style="font-weight:600">{{ r.label }}</td>
+              <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="2"><td style="text-align:right">{{ c.v }}</td></sc-for>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <div class="dialog-actions"><button class="btn btn-secondary" onClick="{{ closeChart }}">Close</button></div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:70;background:var(--color-neutral-900);color:var(--color-bg);font-size:13px;padding:10px 16px;box-shadow:var(--shadow-lg);animation:toast-in .25s ease-out;white-space:nowrap">{{ toast }}</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;teamName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;RG STARS CLUB&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Form&quot;},&quot;deadline&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;12 Sep 2026&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Form&quot;},&quot;formStatus&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;open&quot;,&quot;closed&quot;],&quot;default&quot;:&quot;open&quot;,&quot;tsType&quot;:&quot;'open'|'closed'&quot;,&quot;section&quot;:&quot;Form&quot;},&quot;brandColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#e0a400&quot;,&quot;#d4649c&quot;,&quot;#7a6bd6&quot;],&quot;default&quot;:&quot;#e0a400&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 'shop', detailId: null, selections: {}, cart: [],
+    fullName: '', phone: '', email: '', notes: '',
+    errors: {}, submitError: '', submitting: false, success: null,
+    toast: '', chartOpen: false,
+  };
+  PRODUCTS = [
+    { id: 'tshirt', sku: 'tshirt', name: 'Team T-Shirt', priceCents: 2200, placeholder: 't-shirt photo',
+      desc: 'Lightweight training tee in the club colors, printed crest on the chest. Regular fit, soft combed cotton.',
+      sizes: [{l:'XS',m:{Chest:84,Length:62}},{l:'S',m:{Chest:90,Length:65}},{l:'M',m:{Chest:96,Length:68}},{l:'L',m:{Chest:102,Length:71}},{l:'XL',m:{Chest:108,Length:74},adj:0},{l:'2XL',m:{Chest:114,Length:76},adj:200}],
+      dims: ['Chest','Length'], sizeNote: '2XL adds €2.00',
+      pers: [{key:'name',label:'Name on back',required:true,max:20},{key:'number',label:'Number',required:false,max:3,numeric:true}] },
+    { id: 'hoodie', sku: 'hoodie', name: 'Team Hoodie', priceCents: 4500, placeholder: 'hoodie photo',
+      desc: 'Brushed fleece hoodie with kangaroo pocket and embroidered club crest. Warm-up and travel staple.',
+      sizes: [{l:'XS',m:{Chest:92,Length:64}},{l:'S',m:{Chest:98,Length:67}},{l:'M',m:{Chest:104,Length:70}},{l:'L',m:{Chest:110,Length:73}},{l:'XL',m:{Chest:116,Length:75}},{l:'2XL',m:{Chest:122,Length:77},adj:300}],
+      dims: ['Chest','Length'], sizeNote: '2XL adds €3.00',
+      pers: [{key:'name',label:'Name on back',required:false,max:20}] },
+    { id: 'leggings', sku: 'leggings', name: 'Training Leggings', priceCents: 3700, placeholder: 'leggings photo',
+      desc: 'High-waist 7/8 leggings in matte performance fabric — squat-proof, four-way stretch, flat seams for floor work.',
+      sizes: [{l:'XS',m:{Waist:58,Hips:84,Inseam:64}},{l:'S',m:{Waist:62,Hips:88,Inseam:65}},{l:'M',m:{Waist:66,Hips:92,Inseam:66}},{l:'L',m:{Waist:70,Hips:96,Inseam:67}}],
+      dims: ['Waist','Hips','Inseam'], sizeNote: '', pers: [] },
+    { id: 'shorts', sku: 'shorts', name: 'Training Shorts', priceCents: 2700, placeholder: 'shorts photo',
+      desc: 'Light stretch shorts with an inner brief and side pockets. Sits high on the waist, mid-thigh length.',
+      sizes: [{l:'XS',m:{Waist:58,Hips:84}},{l:'S',m:{Waist:62,Hips:88}},{l:'M',m:{Waist:66,Hips:92}},{l:'L',m:{Waist:70,Hips:96}},{l:'XL',m:{Waist:74,Hips:100}}],
+      dims: ['Waist','Hips'], sizeNote: '', pers: [] },
+  ];
+  componentDidMount() { this.applyBrand(); }
+  componentDidUpdate() { this.applyBrand(); }
+  applyBrand() {
+    document.documentElement.style.setProperty('--brand', this.props.brandColor ?? '#e0a400');
+  }
+  fmt(c) { return '€' + (c / 100).toFixed(2); }
+  getSel(p) {
+    return this.state.selections[p.id] ?? { sizeLabel: p.sizes[Math.min(2, p.sizes.length - 1)].l, qty: 1, pers: {} };
+  }
+  patchSel(p, patch) {
+    this.setState(s => ({ selections: { ...s.selections, [p.id]: { ...this.getSel(p), ...patch } } }));
+  }
+  unitPrice(p, sizeLabel) {
+    const sz = p.sizes.find(s => s.l === sizeLabel);
+    return p.priceCents + (sz && sz.adj ? sz.adj : 0);
+  }
+  showToast(msg) {
+    clearTimeout(this._toastT);
+    this.setState({ toast: msg });
+    this._toastT = setTimeout(() => this.setState({ toast: '' }), 2200);
+  }
+  addToCart(p) {
+    const sel = this.getSel(p);
+    const errors = {};
+    for (const f of p.pers) {
+      if (f.required && !(sel.pers[f.key] ?? '').trim()) errors[p.id + '.' + f.key] = 'Required';
+    }
+    this.setState(s => {
+      const next = { ...s.errors };
+      for (const k of Object.keys(next)) if (k.startsWith(p.id + '.')) delete next[k];
+      return { errors: { ...next, ...errors } };
+    });
+    if (Object.keys(errors).length) return;
+    const pers = Object.fromEntries(Object.entries(sel.pers).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v));
+    this.setState(s => {
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const idx = s.cart.findIndex(l => l.id === p.id && l.sizeLabel === sel.sizeLabel && same(l.pers, pers));
+      let cart;
+      if (idx > -1) { cart = [...s.cart]; cart[idx] = { ...cart[idx], qty: cart[idx].qty + sel.qty }; }
+      else cart = [...s.cart, { id: p.id, name: p.name, sizeLabel: sel.sizeLabel, qty: sel.qty, unit: this.unitPrice(p, sel.sizeLabel), pers }];
+      return { cart, view: 'shop' };
+    });
+    this.patchSel(p, { pers: {}, qty: 1 });
+    this.showToast(p.name + ' · ' + sel.sizeLabel + ' × ' + sel.qty + ' added');
+  }
+  submit() {
+    const s = this.state;
+    const errors = {};
+    if (!s.fullName.trim()) errors.fullName = 'Please enter your name';
+    if (!s.phone.trim()) errors.phone = 'Please enter a phone number';
+    const rx = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (s.email.trim() && !rx.test(s.email.trim())) errors.email = 'That email doesn\u2019t look right';
+    if (s.cart.length === 0) errors.cart = 'Your order is empty \u2014 add at least one item.';
+    this.setState({ errors, submitError: '' });
+    if (Object.keys(errors).length) return;
+    this.setState({ submitting: true });
+    setTimeout(() => { // stands in for submitPublicOrder(form._id, {...})
+      const ref = 'KH-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+      const total = s.cart.reduce((n, l) => n + l.unit * l.qty, 0);
+      this.setState({ submitting: false, success: { ref, total, name: s.fullName.trim().split(' ')[0] } });
+      window.scrollTo({ top: 0 });
+    }, 700);
+  }
+  renderVals() {
+    const s = this.state;
+    const closed = (this.props.formStatus ?? 'open') === 'closed';
+    const detail = this.PRODUCTS.find(p => p.id === s.detailId) ?? this.PRODUCTS[0];
+    const dSel = this.getSel(detail);
+    const total = s.cart.reduce((n, l) => n + l.unit * l.qty, 0);
+    return {
+      teamName: this.props.teamName ?? 'RG STARS CLUB',
+      deadline: this.props.deadline ?? '12 Sep 2026',
+      closedView: closed && !s.success,
+      successView: !closed && !!s.success,
+      shopView: !closed && !s.success,
+      successRef: s.success?.ref, successTotalFmt: s.success ? this.fmt(s.success.total) : '',
+      successName: s.success?.name,
+      onReset: () => this.setState({ success: null, cart: [], notes: '' }),
+      products: this.PRODUCTS.map(p => ({
+        sku: p.sku, name: p.name, priceFmt: this.fmt(p.priceCents), placeholder: p.placeholder,
+        sizeRange: p.sizes[0].l + '\u2013' + p.sizes[p.sizes.length - 1].l,
+        open: () => this.setState({ detailId: p.id }, () => this.setState({ view: 'detail' })),
+      })),
+      cartEmpty: s.cart.length === 0, hasCart: s.cart.length > 0,
+      cartCount: s.cart.reduce((n, l) => n + l.qty, 0),
+      cartLines: s.cart.map((l, i) => ({
+        label: l.name + ' \u00b7 ' + l.sizeLabel + (l.qty > 1 ? ' \u00d7 ' + l.qty : ''),
+        sub: Object.values(l.pers).join(' \u00b7 '),
+        priceFmt: this.fmt(l.unit * l.qty),
+        remove: () => this.setState(st => ({ cart: st.cart.filter((_, j) => j !== i) })),
+      })),
+      totalFmt: this.fmt(total),
+      fullName: s.fullName, phone: s.phone, email: s.email, notes: s.notes,
+      onFullName: e => this.setState({ fullName: e.target.value }),
+      onPhone: e => this.setState({ phone: e.target.value }),
+      onEmail: e => this.setState({ email: e.target.value }),
+      onNotes: e => this.setState({ notes: e.target.value }),
+      errName: s.errors.fullName, errPhone: s.errors.phone, errEmail: s.errors.email, errCart: s.errors.cart,
+      submitError: s.submitError, submitting: s.submitting,
+      submitLabel: s.submitting ? 'Submitting\u2026' : 'Submit order \u2014 ' + this.fmt(total),
+      onSubmit: () => this.submit(),
+      onJumpToSummary: () => {
+        const el = document.getElementById('order-summary');
+        if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 12, behavior: 'smooth' });
+      },
+      detailTransform: s.view === 'detail' ? 'translateX(0)' : 'translateX(calc(50vw + 51%))',
+      detailSku: detail.sku, detailName: detail.name,
+      detailPriceFmt: this.fmt(this.unitPrice(detail, dSel.sizeLabel)),
+      detailDesc: detail.desc, detailSizeNote: detail.sizeNote,
+      hasDims: detail.dims.length > 0,
+      detailSizes: detail.sizes.map(sz => ({
+        label: sz.l, selected: dSel.sizeLabel === sz.l,
+        pick: () => this.patchSel(detail, { sizeLabel: sz.l }),
+      })),
+      detailPers: detail.pers.map(f => ({
+        key: f.key,
+        labelFull: f.label + (f.required ? ' *' : ' (optional)'),
+        value: dSel.pers[f.key] ?? '', maxLength: f.max,
+        err: s.errors[detail.id + '.' + f.key],
+        onChange: e => this.patchSel(detail, { pers: { ...dSel.pers, [f.key]: f.numeric ? e.target.value.replace(/\D/g, '') : e.target.value } }),
+      })),
+      detailQty: dSel.qty,
+      qtyMinus: () => this.patchSel(detail, { qty: Math.max(1, dSel.qty - 1) }),
+      qtyPlus: () => this.patchSel(detail, { qty: Math.min(10, dSel.qty + 1) }),
+      addLabel: 'Add to order \u2014 ' + this.fmt(this.unitPrice(detail, dSel.sizeLabel) * dSel.qty),
+      onAdd: () => this.addToCart(detail),
+      onBack: () => this.setState({ view: 'shop' }),
+      chartOpen: s.chartOpen,
+      openChart: () => this.setState({ chartOpen: true }),
+      closeChart: () => this.setState({ chartOpen: false }),
+      stopClick: e => e.stopPropagation(),
+      chartDims: detail.dims.map(d => ({ label: d })),
+      chartRows: detail.sizes.map(sz => ({ label: sz.l, cells: detail.dims.map(d => ({ v: sz.m[d] ?? '\u2014' })) })),
+      toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
