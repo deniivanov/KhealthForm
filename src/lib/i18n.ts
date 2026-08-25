@@ -1,0 +1,116 @@
+/** Tiny dictionary-based i18n for the public form. Default: Bulgarian. */
+
+export const LOCALES = ['bg', 'en'] as const;
+export type Locale = (typeof LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = 'bg';
+
+const bg = {
+    products: 'Продукти',
+    size: 'Размер',
+    sizeChart: 'Таблица с размери',
+    quantity: 'Брой',
+    addToOrder: 'Добави към поръчката',
+    added: 'добавено в поръчката',
+    orderSummary: 'Вашата поръчка',
+    total: 'Общо',
+    remove: 'Премахни',
+    emptyCart: 'Все още няма добавени продукти.',
+    contactDetails: 'Данни за контакт',
+    fullName: 'Име и фамилия',
+    phone: 'Телефон',
+    email: 'Имейл',
+    notes: 'Бележка към поръчката',
+    notesPlaceholder: 'Например: ръкавите с 1 см по-дълги…',
+    optional: 'по желание',
+    submit: 'Изпрати поръчката',
+    submitting: 'Изпращане…',
+    orderReceived: 'Поръчката е приета!',
+    thankYou: 'Благодарим ви',
+    reference: 'Номер на поръчка',
+    keepReference: 'Запазете този номер за справка.',
+    newOrder: 'Нова поръчка',
+    formClosedTitle: 'Формата не приема поръчки',
+    formClosedBody: 'В момента тази форма е затворена. Свържете се с вашия треньор за повече информация.',
+    formNotOpenYet: 'Формата ще отвори скоро. Опитайте отново по-късно.',
+    deadline: 'Краен срок',
+    opens: 'Отваря се',
+    errRequired: 'Задължително поле',
+    errName: 'Моля, въведете име',
+    errPhone: 'Моля, въведете телефон',
+    errEmail: 'Моля, въведете валиден имейл',
+    errCartEmpty: 'Добавете поне един продукт',
+    errGeneric: 'Възникна грешка. Моля, опитайте отново.',
+    errTooMany: 'Твърде много заявки. Опитайте отново след минута.',
+    cm: 'см',
+    priceEachShort: 'бр.',
+    close: 'Затвори',
+    measurementLabels: {
+        chestWidth: 'Гръдна обиколка',
+        length: 'Дължина',
+        sleeveLength: 'Ръкав',
+        shoulderWidth: 'Рамо',
+        waist: 'Талия',
+        hip: 'Ханш',
+        inseam: 'Вътрешен крачол',
+    } as Record<string, string>,
+};
+
+const en: typeof bg = {
+    products: 'Products',
+    size: 'Size',
+    sizeChart: 'Size chart',
+    quantity: 'Quantity',
+    addToOrder: 'Add to order',
+    added: 'added to your order',
+    orderSummary: 'Your order',
+    total: 'Total',
+    remove: 'Remove',
+    emptyCart: 'No products added yet.',
+    contactDetails: 'Contact details',
+    fullName: 'Full name',
+    phone: 'Phone',
+    email: 'Email',
+    notes: 'Order note',
+    notesPlaceholder: 'E.g. sleeves 1 cm longer…',
+    optional: 'optional',
+    submit: 'Submit order',
+    submitting: 'Submitting…',
+    orderReceived: 'Order received!',
+    thankYou: 'Thank you',
+    reference: 'Order reference',
+    keepReference: 'Keep this reference number.',
+    newOrder: 'New order',
+    formClosedTitle: 'This form is not accepting orders',
+    formClosedBody: 'This form is currently closed. Contact your coach for more information.',
+    formNotOpenYet: 'This form opens soon. Please try again later.',
+    deadline: 'Deadline',
+    opens: 'Opens',
+    errRequired: 'Required field',
+    errName: 'Please enter your name',
+    errPhone: 'Please enter your phone number',
+    errEmail: 'Please enter a valid email',
+    errCartEmpty: 'Add at least one product',
+    errGeneric: 'Something went wrong. Please try again.',
+    errTooMany: 'Too many requests. Try again in a minute.',
+    cm: 'cm',
+    priceEachShort: 'pc',
+    close: 'Close',
+    measurementLabels: {
+        chestWidth: 'Chest width',
+        length: 'Length',
+        sleeveLength: 'Sleeve length',
+        shoulderWidth: 'Shoulder width',
+        waist: 'Waist',
+        hip: 'Hip',
+        inseam: 'Inseam',
+    } as Record<string, string>,
+};
+
+export const DICTIONARIES: Record<Locale, typeof bg> = { bg, en };
+
+export type Dictionary = typeof bg;
+
+export function getDictionary(locale: string | undefined): { locale: Locale; dict: Dictionary } {
+    const l: Locale = locale === 'en' ? 'en' : 'bg';
+    return { locale: l, dict: DICTIONARIES[l] };
+}
