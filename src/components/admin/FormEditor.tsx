@@ -49,9 +49,6 @@ export interface SerializedFormForEdit {
     }>;
 }
 
-const inputCls =
-    'w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400';
-
 function toLocalInput(iso?: string): string {
     if (!iso) return '';
     const d = new Date(iso);
@@ -200,115 +197,130 @@ const FormEditor = ({
     };
 
     return (
-        <div className="p-6 max-w-5xl">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-                {initial ? `Редакция: ${initial.title}` : 'Нова форма'}
-            </h1>
+        <div className="flex flex-col gap-6">
+            <div>
+                <h6>{initial ? 'Редакция на форма' : 'Нова форма'}</h6>
+                <h3 style={{ margin: 0 }}>{initial ? initial.title : 'Създаване на форма'}</h3>
+            </div>
 
-            {errors._ && <p className="mb-4 text-red-600 font-medium">{errors._}</p>}
+            {errors._ && <p className="field-error" style={{ fontSize: 13 }}>{errors._}</p>}
 
-            {/* ── Basics ── */}
-            <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Отбор *</label>
-                        <select value={teamId} onChange={e => setTeamId(e.target.value)} className={inputCls}>
-                            {teams.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
-                        </select>
-                        {errors.teamId && <p className="text-sm text-red-600 mt-1">{errors.teamId}</p>}
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Заглавие *</label>
-                        <input value={title} onChange={e => setTitle(e.target.value)} className={inputCls} placeholder="FC Example — Есен 2026" />
-                        {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
-                    </div>
+            {/* ── 1 · Basics ── */}
+            <div className="panel">
+                <div className="panel-head">
+                    <h6>1 · Основни данни</h6>
                 </div>
-
-                <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Съобщение към формата</label>
-                    <textarea
-                        value={message}
-                        onChange={e => setMessage(e.target.value)}
-                        rows={2}
-                        className={inputCls}
-                        placeholder="Поръчки до 15 септември. Получаване от треньора."
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Отваря се на</label>
-                        <input type="datetime-local" value={opensAt} onChange={e => setOpensAt(e.target.value)} className={inputCls} />
-                        {errors.opensAt && <p className="text-sm text-red-600 mt-1">{errors.opensAt}</p>}
+                <div className="flex flex-col gap-4" style={{ padding: 16 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="field">
+                            <label>Отбор *</label>
+                            <select value={teamId} onChange={e => setTeamId(e.target.value)} className="input">
+                                {teams.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                            </select>
+                            {errors.teamId && <p className="field-error">{errors.teamId}</p>}
+                        </div>
+                        <div className="field">
+                            <label>Заглавие *</label>
+                            <input value={title} onChange={e => setTitle(e.target.value)} className="input" placeholder="FC Example — Есен 2026" />
+                            {errors.title && <p className="field-error">{errors.title}</p>}
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Затваря се на</label>
-                        <input type="datetime-local" value={closesAt} onChange={e => setClosesAt(e.target.value)} className={inputCls} />
-                        {errors.closesAt && <p className="text-sm text-red-600 mt-1">{errors.closesAt}</p>}
-                    </div>
-                </div>
 
-                <div className="flex flex-wrap gap-6">
-                    <span className="text-sm font-bold text-slate-700">Задължителни данни на клиента:</span>
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" checked disabled className="w-4 h-4" /> Име (винаги)
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" checked={requirePhone} onChange={e => setRequirePhone(e.target.checked)} className="w-4 h-4" /> Телефон
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" checked={requireEmail} onChange={e => setRequireEmail(e.target.checked)} className="w-4 h-4" /> Имейл
-                    </label>
+                    <div className="field">
+                        <label>Съобщение към формата</label>
+                        <textarea
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            rows={2}
+                            className="input"
+                            placeholder="Поръчки до 15 септември. Получаване от треньора."
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="field">
+                            <label>Отваря се на</label>
+                            <input type="datetime-local" value={opensAt} onChange={e => setOpensAt(e.target.value)} className="input" />
+                            {errors.opensAt && <p className="field-error">{errors.opensAt}</p>}
+                        </div>
+                        <div className="field">
+                            <label>Затваря се на</label>
+                            <input type="datetime-local" value={closesAt} onChange={e => setClosesAt(e.target.value)} className="input" />
+                            {errors.closesAt && <p className="field-error">{errors.closesAt}</p>}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                        <span className="text-muted" style={{ fontSize: 12 }}>Задължителни данни на клиента:</span>
+                        <label className="flex items-center gap-2" style={{ fontSize: 13 }}>
+                            <input type="checkbox" checked disabled style={{ accentColor: 'var(--color-accent)' }} /> Име (винаги)
+                        </label>
+                        <label className="flex items-center gap-2" style={{ fontSize: 13, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={requirePhone} onChange={e => setRequirePhone(e.target.checked)} style={{ accentColor: 'var(--color-accent)' }} /> Телефон
+                        </label>
+                        <label className="flex items-center gap-2" style={{ fontSize: 13, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={requireEmail} onChange={e => setRequireEmail(e.target.checked)} style={{ accentColor: 'var(--color-accent)' }} /> Имейл
+                        </label>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Selected items ── */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Продукти във формата ({items.length})</h2>
-                {errors.items && <p className="text-sm text-red-600 mb-3">{errors.items}</p>}
+            {/* ── 2 · Products ── */}
+            <div className="panel">
+                <div className="panel-head">
+                    <h6>2 · Продукти</h6>
+                    <span className="text-muted" style={{ fontSize: 12 }}>{items.length} във формата</span>
+                </div>
+                <div className="flex flex-col gap-4" style={{ padding: 16 }}>
+                    {errors.items && <p className="field-error">{errors.items}</p>}
 
-                <div className="space-y-4">
                     {items.map((item, i) => {
                         const product = productById.get(item.productId);
                         if (!product) return null;
                         return (
-                            <div key={item.productId} className="border border-slate-200 rounded-lg p-4">
+                            <div key={item.productId} style={{ border: '1px solid var(--color-divider)', padding: 14 }}>
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-center gap-3">
                                         {product.images[0] && (
                                             // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={product.images[0]} alt="" className="w-12 h-12 rounded object-cover border border-slate-200" />
+                                            <img
+                                                src={product.images[0]}
+                                                alt=""
+                                                style={{ width: 48, height: 48, objectFit: 'cover', border: '1px solid var(--color-divider)' }}
+                                            />
                                         )}
                                         <div>
-                                            <div className="font-semibold text-gray-900">{product.name}</div>
-                                            <div className="text-xs text-gray-500 font-mono">{product.sku} · базова цена {formatCents(product.basePriceCents)}</div>
+                                            <div style={{ fontWeight: 600, fontSize: 14 }}>{product.name}</div>
+                                            <div className="text-muted" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+                                                {product.sku} · базова цена {formatCents(product.basePriceCents)}
+                                            </div>
                                         </div>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setItems(items.filter((_, j) => j !== i))}
-                                        className="text-slate-400 hover:text-red-500"
+                                        className="btn btn-ghost"
+                                        style={{ fontSize: 13, padding: '2px 6px' }}
                                         title="Премахни от формата"
                                     >
                                         ✕
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                                            Цена за този отбор (€) — празно = базовата
-                                        </label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 14 }}>
+                                    <div className="field">
+                                        <label>Цена за този отбор (€) — празно = базовата</label>
                                         <input
                                             value={item.priceOverride}
                                             onChange={e => patchItem(i, { priceOverride: e.target.value })}
-                                            className="w-32 border border-slate-300 rounded px-2 py-1"
+                                            className="input"
+                                            style={{ width: 128 }}
                                             placeholder={centsToEuroString(product.basePriceCents)}
                                             inputMode="decimal"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-600 mb-1">Предлагани размери</label>
+                                    <div className="field">
+                                        <label>Предлагани размери</label>
                                         <div className="flex flex-wrap gap-1">
                                             {product.sizes.map(s => {
                                                 const on = item.sizeLabels.includes(s.label);
@@ -317,11 +329,21 @@ const FormEditor = ({
                                                         key={s.label}
                                                         type="button"
                                                         onClick={() => toggleSize(i, s.label)}
-                                                        className={`text-xs px-2 py-1 rounded-full border ${
-                                                            on
-                                                                ? 'bg-yellow-400 border-yellow-500 text-slate-800 font-semibold'
-                                                                : 'bg-white border-slate-300 text-slate-400'
-                                                        }`}
+                                                        data-selected={on}
+                                                        style={{
+                                                            font: 'inherit',
+                                                            fontSize: 12,
+                                                            padding: '4px 10px',
+                                                            cursor: 'pointer',
+                                                            border: on
+                                                                ? '1px solid var(--color-accent)'
+                                                                : '1px solid var(--color-divider)',
+                                                            background: on ? 'var(--color-accent)' : 'transparent',
+                                                            color: on
+                                                                ? 'var(--color-text)'
+                                                                : 'color-mix(in srgb, var(--color-text) 55%, transparent)',
+                                                            fontWeight: on ? 600 : 400,
+                                                        }}
                                                     >
                                                         {s.label}
                                                     </button>
@@ -331,56 +353,67 @@ const FormEditor = ({
                                     </div>
                                 </div>
 
-                                <div className="mt-4">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className="text-xs font-bold text-slate-600">Персонализация:</span>
+                                <div style={{ marginTop: 12 }}>
+                                    <div className="flex flex-wrap items-center gap-2" style={{ marginBottom: 8 }}>
+                                        <span className="text-muted" style={{ fontSize: 12 }}>Персонализация:</span>
                                         <button
                                             type="button"
                                             onClick={() => addPersonalization(i, { key: 'playerName', label: 'Име на гърба', type: 'text', required: false })}
-                                            className="text-xs text-blue-700 hover:underline"
+                                            className="btn btn-ghost"
+                                            style={{ fontSize: 12, fontWeight: 600 }}
                                         >
                                             + име на гърба
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => addPersonalization(i, { key: 'playerNumber', label: 'Номер', type: 'number', required: false })}
-                                            className="text-xs text-blue-700 hover:underline"
+                                            className="btn btn-ghost"
+                                            style={{ fontSize: 12, fontWeight: 600 }}
                                         >
                                             + номер
                                         </button>
-                                        <button type="button" onClick={() => addPersonalization(i)} className="text-xs text-blue-700 hover:underline">
+                                        <button
+                                            type="button"
+                                            onClick={() => addPersonalization(i)}
+                                            className="btn btn-ghost"
+                                            style={{ fontSize: 12, fontWeight: 600 }}
+                                        >
                                             + друго поле
                                         </button>
                                     </div>
                                     {item.personalization.length > 0 && (
-                                        <div className="space-y-2">
+                                        <div className="flex flex-col gap-2">
                                             {item.personalization.map((field, fi) => (
                                                 <div key={fi} className="flex flex-wrap items-center gap-2">
                                                     <input
                                                         value={field.label}
                                                         onChange={e => patchPersonalization(i, fi, { label: e.target.value })}
                                                         placeholder="Етикет (напр. Име на гърба)"
-                                                        className="border border-slate-300 rounded px-2 py-1 text-sm w-52"
+                                                        className="input"
+                                                        style={{ width: 208 }}
                                                     />
                                                     <input
                                                         value={field.key}
                                                         onChange={e => patchPersonalization(i, fi, { key: e.target.value })}
                                                         placeholder="ключ"
-                                                        className="border border-slate-300 rounded px-2 py-1 text-sm w-32 font-mono"
+                                                        className="input"
+                                                        style={{ width: 128, fontFamily: 'monospace' }}
                                                     />
                                                     <select
                                                         value={field.type}
                                                         onChange={e => patchPersonalization(i, fi, { type: e.target.value as 'text' | 'number' })}
-                                                        className="border border-slate-300 rounded px-2 py-1 text-sm"
+                                                        className="input"
+                                                        style={{ width: 110 }}
                                                     >
                                                         <option value="text">текст</option>
                                                         <option value="number">число</option>
                                                     </select>
-                                                    <label className="flex items-center gap-1 text-xs text-slate-600">
+                                                    <label className="flex items-center gap-1 text-muted" style={{ fontSize: 12, cursor: 'pointer' }}>
                                                         <input
                                                             type="checkbox"
                                                             checked={field.required}
                                                             onChange={e => patchPersonalization(i, fi, { required: e.target.checked })}
+                                                            style={{ accentColor: 'var(--color-accent)' }}
                                                         />
                                                         задължително
                                                     </label>
@@ -389,7 +422,9 @@ const FormEditor = ({
                                                         onClick={() =>
                                                             patchItem(i, { personalization: item.personalization.filter((_, j) => j !== fi) })
                                                         }
-                                                        className="text-slate-400 hover:text-red-500"
+                                                        className="btn btn-ghost"
+                                                        style={{ fontSize: 13, padding: '2px 6px' }}
+                                                        title="Премахни полето"
                                                     >
                                                         ✕
                                                     </button>
@@ -401,58 +436,67 @@ const FormEditor = ({
                             </div>
                         );
                     })}
-                </div>
 
-                {/* ── Product picker ── */}
-                <div className="mt-6 border-t border-slate-200 pt-4">
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Добави продукти от каталога</label>
-                    <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className={inputCls}
-                        placeholder="Търсене по име, SKU, категория..."
-                    />
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto">
-                        {pickerResults.map(p => (
-                            <button
-                                key={p._id}
-                                type="button"
-                                onClick={() => addItem(p)}
-                                className="flex items-center gap-3 text-left border border-slate-200 rounded-lg p-2 hover:border-yellow-400 hover:bg-yellow-50"
-                            >
-                                {p.images[0] && (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={p.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
-                                )}
-                                <span>
-                                    <span className="block font-medium text-gray-900">{p.name}</span>
-                                    <span className="block text-xs text-gray-500 font-mono">
-                                        {p.sku} · {formatCents(p.basePriceCents)}
+                    {/* ── Product picker ── */}
+                    <div style={{ borderTop: '2px solid var(--color-divider)', paddingTop: 14 }}>
+                        <div className="field">
+                            <label>Добави продукти от каталога</label>
+                            <input
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="input"
+                                placeholder="Търсене по име, SKU, категория…"
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto" style={{ marginTop: 10 }}>
+                            {pickerResults.map(p => (
+                                <button
+                                    key={p._id}
+                                    type="button"
+                                    onClick={() => addItem(p)}
+                                    className="flex items-center gap-3 text-left"
+                                    style={{
+                                        font: 'inherit',
+                                        cursor: 'pointer',
+                                        border: '1px solid var(--color-divider)',
+                                        background: 'transparent',
+                                        padding: 8,
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                    {p.images[0] && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={p.images[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover' }} />
+                                    )}
+                                    <span>
+                                        <span className="block" style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
+                                        <span className="block text-muted" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+                                            {p.sku} · {formatCents(p.basePriceCents)}
+                                        </span>
                                     </span>
-                                </span>
-                            </button>
-                        ))}
-                        {pickerResults.length === 0 && (
-                            <p className="text-sm text-gray-500 col-span-2">Няма продукти за добавяне.</p>
-                        )}
+                                </button>
+                            ))}
+                            {pickerResults.length === 0 && (
+                                <p className="text-muted col-span-2" style={{ fontSize: 13, margin: 0 }}>Няма продукти за добавяне.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 mt-6">
-                <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-6 py-3 bg-yellow-400 text-slate-800 font-bold rounded-lg hover:bg-yellow-500 disabled:opacity-60"
-                >
+            {/* ── Save ── */}
+            <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={handleSave} disabled={saving} className="btn btn-primary">
                     {saving ? 'Запазване…' : initial ? 'Запази промените' : 'Създай (чернова)'}
                 </button>
-                <button type="button" onClick={() => router.push('/admin/forms')} className="px-6 py-3 border border-slate-300 rounded-lg hover:bg-gray-50">
+                <button type="button" onClick={() => router.push('/admin/forms')} className="btn btn-secondary">
                     Отказ
                 </button>
                 {!initial && (
-                    <p className="text-sm text-gray-500">Формата се създава като чернова — отваряш я от списъка.</p>
+                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
+                        Формата се създава като чернова — отваряте я от списъка, когато е готова.
+                    </p>
                 )}
             </div>
         </div>

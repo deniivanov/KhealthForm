@@ -35,14 +35,6 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
     cancelled: 'отказана',
 };
 
-const STATUS_COLORS: Record<OrderStatus, string> = {
-    submitted: 'bg-blue-50 text-blue-700 border-blue-200',
-    confirmed: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    in_production: 'bg-amber-50 text-amber-700 border-amber-200',
-    delivered: 'bg-green-50 text-green-700 border-green-200',
-    cancelled: 'bg-red-50 text-red-600 border-red-200',
-};
-
 function formatDate(iso: string): string {
     const d = new Date(iso);
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -90,91 +82,99 @@ const OrdersTable = ({
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="table">
                 <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 text-left text-gray-900">
-                        <th className="py-3 px-4 w-6"></th>
-                        <th className="py-3 px-4 font-medium">Поръчка</th>
-                        <th className="py-3 px-4 font-medium">Клиент</th>
-                        {context && <th className="py-3 px-4 font-medium">Форма</th>}
-                        <th className="py-3 px-4 font-medium">Артикули</th>
-                        <th className="py-3 px-4 font-medium">Сума</th>
-                        <th className="py-3 px-4 font-medium">Статус</th>
-                        <th className="py-3 px-4 font-medium">Плащане</th>
-                        <th className="py-3 px-4 font-medium">Дата</th>
+                    <tr>
+                        <th style={{ width: 24 }}></th>
+                        <th>Поръчка</th>
+                        <th>Клиент</th>
+                        {context && <th>Форма</th>}
+                        <th>Артикули</th>
+                        <th>Сума</th>
+                        <th>Статус</th>
+                        <th>Плащане</th>
+                        <th>Дата</th>
                     </tr>
                 </thead>
                 <tbody>
                     {orders.map(order => (
                         <React.Fragment key={order._id}>
-                            <tr className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => toggle(order._id)}>
-                                <td className="py-3 px-4 text-gray-400">{expanded.has(order._id) ? '▾' : '▸'}</td>
-                                <td className="py-3 px-4 font-mono text-sm text-gray-900">{order.reference}</td>
-                                <td className="py-3 px-4">
-                                    <div className="font-medium text-gray-900">{order.member.fullName}</div>
-                                    <div className="text-xs text-gray-500">
+                            <tr className="cursor-pointer" onClick={() => toggle(order._id)}>
+                                <td className="text-muted">{expanded.has(order._id) ? '▾' : '▸'}</td>
+                                <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{order.reference}</td>
+                                <td>
+                                    <span style={{ fontWeight: 600 }}>{order.member.fullName}</span>
+                                    <span className="text-muted" style={{ display: 'block', fontSize: 11.5 }}>
                                         {[order.member.phone, order.member.email].filter(Boolean).join(' · ')}
-                                    </div>
+                                    </span>
                                 </td>
                                 {context && (
-                                    <td className="py-3 px-4 text-sm text-gray-600">{context[order.formId] ?? '—'}</td>
+                                    <td className="text-muted">{context[order.formId] ?? '—'}</td>
                                 )}
-                                <td className="py-3 px-4 text-sm text-gray-600">
+                                <td className="text-muted">
                                     {order.lines.reduce((n, l) => n + l.quantity, 0) } бр. / {order.lines.length} реда
                                 </td>
-                                <td className="py-3 px-4 font-semibold text-gray-900">{formatCents(order.totalCents)}</td>
-                                <td className="py-3 px-4" onClick={e => e.stopPropagation()}>
+                                <td style={{ fontWeight: 600 }}>{formatCents(order.totalCents)}</td>
+                                <td onClick={e => e.stopPropagation()}>
                                     <select
                                         value={order.status}
                                         disabled={busyId === order._id}
                                         onChange={e => changeStatus(order._id, e.target.value as OrderStatus)}
-                                        className={`text-xs font-semibold border rounded-full px-2 py-1 ${STATUS_COLORS[order.status]}`}
+                                        className="tag-select"
                                     >
                                         {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(s => (
                                             <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                                         ))}
                                     </select>
                                 </td>
-                                <td className="py-3 px-4" onClick={e => e.stopPropagation()}>
+                                <td onClick={e => e.stopPropagation()}>
                                     <button
                                         disabled={busyId === order._id}
                                         onClick={() => togglePayment(order._id, order.paymentStatus)}
-                                        className={`text-xs font-semibold px-2 py-1 rounded-full border ${
-                                            order.paymentStatus === 'paid'
-                                                ? 'bg-green-50 text-green-700 border-green-200'
-                                                : 'bg-gray-50 text-gray-500 border-gray-200'
-                                        }`}
+                                        className={`tag ${order.paymentStatus === 'paid' ? 'tag-good' : 'tag-ink'}`}
+                                        style={{ cursor: 'pointer' }}
                                         title="Смени статус на плащане"
                                     >
                                         {order.paymentStatus === 'paid' ? 'платена' : 'неплатена'}
                                     </button>
                                 </td>
-                                <td className="py-3 px-4 text-sm text-gray-600 whitespace-nowrap">{formatDate(order.createdAt)}</td>
+                                <td className="text-muted whitespace-nowrap">{formatDate(order.createdAt)}</td>
                             </tr>
                             {expanded.has(order._id) && (
-                                <tr className="bg-gray-50">
+                                <tr>
                                     <td></td>
-                                    <td colSpan={context ? 8 : 7} className="py-3 px-4">
-                                        <div className="space-y-1">
+                                    <td colSpan={context ? 8 : 7} style={{ padding: '10px 8px' }}>
+                                        <div className="flex flex-col gap-1">
                                             {order.lines.map((line, i) => (
-                                                <div key={i} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                                                    <span className="text-gray-800">
-                                                        <span className="font-medium">{line.productName}</span>{' '}
-                                                        <span className="text-gray-500 font-mono text-xs">({line.productSku})</span>
+                                                <div
+                                                    key={i}
+                                                    className="flex items-center justify-between gap-3"
+                                                    style={{
+                                                        background: 'var(--color-surface)',
+                                                        border: '1px solid var(--color-divider)',
+                                                        padding: '8px 12px',
+                                                        fontSize: 13,
+                                                    }}
+                                                >
+                                                    <span>
+                                                        <span style={{ fontWeight: 600 }}>{line.productName}</span>{' '}
+                                                        <span className="text-muted" style={{ fontFamily: 'monospace', fontSize: 11 }}>({line.productSku})</span>
                                                         {' — '}{line.sizeLabel} × {line.quantity}
                                                         {line.personalization && Object.keys(line.personalization).length > 0 && (
-                                                            <span className="block text-xs text-gray-500">
+                                                            <span className="text-muted" style={{ display: 'block', fontSize: 11.5 }}>
                                                                 {Object.entries(line.personalization).map(([k, v]) => `${k}: ${v}`).join(' · ')}
                                                             </span>
                                                         )}
                                                     </span>
-                                                    <span className="text-gray-700 whitespace-nowrap">
+                                                    <span className="whitespace-nowrap">
                                                         {formatCents(line.unitPriceCents)} × {line.quantity} = {formatCents(line.unitPriceCents * line.quantity)}
                                                     </span>
                                                 </div>
                                             ))}
                                             {order.notes && (
-                                                <p className="text-sm text-gray-600 pt-1">📝 Бележка от клиента: {order.notes}</p>
+                                                <p className="text-muted" style={{ fontSize: 13, margin: '6px 0 0' }}>
+                                                    Бележка от клиента: {order.notes}
+                                                </p>
                                             )}
                                         </div>
                                     </td>
@@ -184,7 +184,7 @@ const OrdersTable = ({
                     ))}
                 </tbody>
             </table>
-            {orders.length === 0 && <div className="text-center py-12 text-gray-500">Няма намерени поръчки</div>}
+            {orders.length === 0 && <div className="empty"><p>Няма намерени поръчки.</p></div>}
         </div>
     );
 };

@@ -5,6 +5,7 @@ import Team from '@/models/Team';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import { formatCents } from '@/lib/money';
+import CopyLinkButton from '@/components/admin/CopyLinkButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export default async function AdminDashboardPage() {
 
     const [openForms, recentOrders, teams, counts] = await Promise.all([
         Form.find({ status: 'open' }).sort({ closesAt: 1, createdAt: -1 }).limit(10).lean(),
-        Order.find().sort({ createdAt: -1 }).limit(10).lean(),
+        Order.find().sort({ createdAt: -1 }).limit(8).lean(),
         Team.find().lean(),
         Promise.all([
             Product.countDocuments({ isActive: true }),
@@ -48,78 +49,116 @@ export default async function AdminDashboardPage() {
     const stats = [
         { label: 'Активни продукти', value: productCount, href: '/admin/products' },
         { label: 'Отбори', value: teamCount, href: '/admin/teams' },
-        { label: 'Поръчки (всички)', value: orderCount, href: '/admin/orders' },
+        { label: 'Поръчки', value: orderCount, href: '/admin/orders' },
         { label: 'Оборот', value: formatCents(revenueAgg[0]?.sum ?? 0), href: '/admin/orders' },
     ];
 
     return (
-        <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-semibold text-gray-900">Табло</h1>
+        <div className="flex flex-col gap-6">
+            {/* Header + quick actions */}
+            <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h6>Табло</h6>
+                    <h3 style={{ margin: 0 }}>Добре дошли</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Link href="/admin/forms/new" className="btn btn-primary">+ Нова форма</Link>
+                    <Link href="/admin/products/new" className="btn btn-secondary">+ Нов продукт</Link>
+                    <Link href="/admin/teams/new" className="btn btn-secondary">+ Нов отбор</Link>
+                </div>
+            </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {stats.map(s => (
-                    <Link key={s.label} href={s.href} className="bg-white rounded-lg shadow-sm p-5 hover:shadow transition-shadow">
-                        <p className="text-sm text-gray-500">{s.label}</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">{s.value}</p>
+                    <Link key={s.label} href={s.href} className="stat">
+                        <span className="stat-label">{s.label}</span>
+                        <div className="stat-value">{s.value}</div>
                     </Link>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* ── Open forms ── */}
-                <div className="bg-white rounded-lg shadow-sm">
-                    <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-900">Отворени форми</h2>
-                        <Link href="/admin/forms" className="text-sm text-blue-700 hover:underline">всички →</Link>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Open forms */}
+                <div className="panel">
+                    <div className="panel-head">
+                        <h6>Отворени форми</h6>
+                        <Link href="/admin/forms" className="btn btn-ghost" style={{ fontSize: 12 }}>всички →</Link>
                     </div>
-                    <div className="divide-y divide-gray-100">
-                        {openForms.map(f => {
-                            const team = teamById.get(String(f.teamId));
-                            return (
-                                <div key={String(f._id)} className="p-4 flex items-center justify-between gap-3">
+                    {openForms.length === 0 ? (
+                        <div className="empty">
+                            <p>Няма отворени форми в момента.</p>
+                            <Link href="/admin/forms/new" className="btn btn-primary">Създай форма</Link>
+                        </div>
+                    ) : (
+                        <div>
+                            {openForms.map(f => {
+                                const team = teamById.get(String(f.teamId));
+                                const publicPath = team ? `/f/${team.slug}/${f.slug}` : null;
+                                return (
+                                    <div
+                                        key={String(f._id)}
+                                        className="flex items-center justify-between gap-3 flex-wrap"
+                                        style={{ padding: '12px 16px', borderBottom: '1px solid var(--color-divider)' }}
+                                    >
+                                        <div style={{ minWidth: 0 }}>
+                                            <Link href={`/admin/forms/${String(f._id)}/orders`} className="row-link" style={{ fontSize: 14 }}>
+                                                {f.title}
+                                            </Link>
+                                            <p className="text-muted" style={{ fontSize: 12, margin: '2px 0 0' }}>
+                                                {team?.name}
+                                                {f.closesAt && ` · затваря на ${formatDate(f.closesAt)}`}
+                                                {` · ${orderCountByForm.get(String(f._id)) ?? 0} поръчки`}
+                                            </p>
+                                        </div>
+                                        {publicPath && <CopyLinkButton path={publicPath} small />}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Recent orders */}
+                <div className="panel">
+                    <div className="panel-head">
+                        <h6>Последни поръчки</h6>
+                        <Link href="/admin/orders" className="btn btn-ghost" style={{ fontSize: 12 }}>всички →</Link>
+                    </div>
+                    {recentOrders.length === 0 ? (
+                        <div className="empty"><p>Все още няма поръчки.</p></div>
+                    ) : (
+                        <div>
+                            {recentOrders.map(o => (
+                                <div
+                                    key={String(o._id)}
+                                    className="flex items-center justify-between gap-3"
+                                    style={{ padding: '10px 16px', borderBottom: '1px solid var(--color-divider)' }}
+                                >
                                     <div>
-                                        <Link href={`/admin/forms/${String(f._id)}/orders`} className="font-medium text-gray-900 hover:underline">
-                                            {f.title}
-                                        </Link>
-                                        <p className="text-xs text-gray-500">
-                                            {team?.name}
-                                            {f.closesAt && ` · затваря ${formatDate(f.closesAt)}`}
+                                        <span style={{ fontSize: 13, fontWeight: 600 }}>{o.member.fullName}</span>
+                                        <p className="text-muted" style={{ fontSize: 11.5, margin: 0, fontFamily: 'var(--font-geist-mono, monospace)' }}>
+                                            {o.reference}
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-bold text-gray-900">{orderCountByForm.get(String(f._id)) ?? 0}</p>
-                                        <p className="text-xs text-gray-500">поръчки</p>
+                                        <span style={{ fontSize: 13, fontWeight: 600 }}>{formatCents(o.totalCents)}</span>
+                                        <p className="text-muted" style={{ fontSize: 11.5, margin: 0 }}>{formatDate(o.createdAt)}</p>
                                     </div>
                                 </div>
-                            );
-                        })}
-                        {openForms.length === 0 && <p className="p-5 text-gray-500 text-sm">Няма отворени форми.</p>}
-                    </div>
-                </div>
-
-                {/* ── Recent orders ── */}
-                <div className="bg-white rounded-lg shadow-sm">
-                    <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-900">Последни поръчки</h2>
-                        <Link href="/admin/orders" className="text-sm text-blue-700 hover:underline">всички →</Link>
-                    </div>
-                    <div className="divide-y divide-gray-100">
-                        {recentOrders.map(o => (
-                            <div key={String(o._id)} className="p-4 flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="font-medium text-gray-900">{o.member.fullName}</p>
-                                    <p className="text-xs text-gray-500 font-mono">{o.reference}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-gray-900">{formatCents(o.totalCents)}</p>
-                                    <p className="text-xs text-gray-500">{formatDate(o.createdAt)}</p>
-                                </div>
-                            </div>
-                        ))}
-                        {recentOrders.length === 0 && <p className="p-5 text-gray-500 text-sm">Все още няма поръчки.</p>}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Legacy, demoted out of the main nav */}
+            <p className="text-muted" style={{ fontSize: 12 }}>
+                Архив:{' '}
+                <Link href="/admin/legacy" className="underline underline-offset-2">стари поръчки</Link>
+                {' · '}
+                <Link href="/admin/summary" className="underline underline-offset-2">стара справка</Link>
+            </p>
         </div>
     );
 }

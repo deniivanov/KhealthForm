@@ -41,84 +41,91 @@ export default async function FormOrdersPage({
     const revenue = allOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + o.totalCents, 0);
 
     const exportBase = `/api/admin/forms/${id}/export`;
-    const exportBtn = 'text-sm px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-gray-100 whitespace-nowrap';
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div className="flex flex-col gap-6">
+            {/* ── Header ── */}
+            <div className="panel">
+                <div className="page-head">
                     <div>
-                        <p className="text-sm text-gray-500">
-                            <Link href="/admin/forms" className="hover:underline">Форми</Link> / {team?.name}
+                        <p className="text-muted" style={{ margin: '0 0 2px', fontSize: 13 }}>
+                            <Link href="/admin/forms" className="underline underline-offset-2">Форми</Link> / {team?.name}
                         </p>
-                        <h1 className="text-2xl font-semibold text-gray-900">{form.title}</h1>
-                        <p className="text-gray-600 mt-1">
+                        <h3 style={{ margin: 0 }}>{form.title}</h3>
+                        <p className="text-muted">
                             {allOrders.length} поръчки · оборот {formatCents(revenue)} (без отказаните)
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <a href={`${exportBase}?report=orders&format=csv`} className={exportBtn}>⬇ Поръчки CSV</a>
-                        <a href={`${exportBase}?report=orders&format=xlsx`} className={exportBtn}>⬇ Поръчки XLSX</a>
-                        <a href={`${exportBase}?report=summary&format=csv`} className={exportBtn}>⬇ Производство CSV</a>
-                        <a href={`${exportBase}?report=summary&format=xlsx`} className={exportBtn}>⬇ Производство XLSX</a>
+                        <a href={`${exportBase}?report=orders&format=csv`} className="btn btn-secondary whitespace-nowrap">Поръчки CSV</a>
+                        <a href={`${exportBase}?report=orders&format=xlsx`} className="btn btn-secondary whitespace-nowrap">Поръчки XLSX</a>
+                        <a href={`${exportBase}?report=summary&format=csv`} className="btn btn-secondary whitespace-nowrap">Производство CSV</a>
+                        <a href={`${exportBase}?report=summary&format=xlsx`} className="btn btn-secondary whitespace-nowrap">Производство XLSX</a>
                     </div>
                 </div>
             </div>
 
             {/* ── Production summary ── */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Производствена справка</h2>
-                <p className="text-sm text-gray-500 mb-4">Общ брой по продукт и размер за цялата форма (без отказаните поръчки).</p>
+            <div className="panel">
+                <div style={{ padding: '20px 16px 12px' }}>
+                    <h6 style={{ margin: 0 }}>Производствена справка</h6>
+                    <p className="text-muted" style={{ margin: '4px 0 0', fontSize: 13 }}>
+                        Общ брой по продукт и размер за цялата форма (без отказаните поръчки).
+                    </p>
+                </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="table">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-900">
-                                <th className="py-2 px-4 text-left font-medium">Продукт</th>
+                            <tr>
+                                <th>Продукт</th>
                                 {summary.sizes.map(s => (
-                                    <th key={s} className="py-2 px-3 text-right font-medium">{s}</th>
+                                    <th key={s} style={{ textAlign: 'right' }}>{s}</th>
                                 ))}
-                                <th className="py-2 px-4 text-right font-bold">Общо</th>
+                                <th style={{ textAlign: 'right' }}>Общо</th>
                             </tr>
                         </thead>
                         <tbody>
                             {summary.rows.map(row => (
-                                <tr key={row.productSku + row.productName} className="border-b border-gray-100">
-                                    <td className="py-2 px-4 text-gray-900">
-                                        <span className="font-medium">{row.productName}</span>{' '}
-                                        <span className="text-xs text-gray-400 font-mono">{row.productSku}</span>
+                                <tr key={row.productSku + row.productName}>
+                                    <td>
+                                        <span style={{ fontWeight: 600 }}>{row.productName}</span>{' '}
+                                        <span className="text-muted" style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.productSku}</span>
                                     </td>
                                     {summary.sizes.map(s => (
-                                        <td key={s} className="py-2 px-3 text-right text-gray-700">
-                                            {row.bySize[s] ?? <span className="text-gray-300">·</span>}
+                                        <td key={s} style={{ textAlign: 'right' }}>
+                                            {row.bySize[s] ?? <span className="text-muted">·</span>}
                                         </td>
                                     ))}
-                                    <td className="py-2 px-4 text-right font-bold text-gray-900">{row.total}</td>
+                                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{row.total}</td>
                                 </tr>
                             ))}
                             {summary.rows.length > 0 && (
-                                <tr className="bg-gray-50 font-bold text-gray-900">
-                                    <td className="py-2 px-4">ОБЩО</td>
+                                <tr style={{ fontWeight: 700 }}>
+                                    <td style={{ borderTop: '2px solid var(--color-divider)' }}>ОБЩО</td>
                                     {summary.sizes.map(s => (
-                                        <td key={s} className="py-2 px-3 text-right">
+                                        <td key={s} style={{ textAlign: 'right', borderTop: '2px solid var(--color-divider)' }}>
                                             {summary.rows.reduce((sum, r) => sum + (r.bySize[s] ?? 0), 0) || ''}
                                         </td>
                                     ))}
-                                    <td className="py-2 px-4 text-right">{summary.grandTotal}</td>
+                                    <td style={{ textAlign: 'right', borderTop: '2px solid var(--color-divider)' }}>{summary.grandTotal}</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                     {summary.rows.length === 0 && (
-                        <p className="text-center text-gray-500 py-6">Все още няма поръчки.</p>
+                        <div className="empty"><p>Все още няма поръчки.</p></div>
                     )}
                 </div>
             </div>
 
             {/* ── Orders ── */}
-            <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-4 border-b border-gray-200 flex flex-wrap items-center gap-2">
+            <div className="panel">
+                <div
+                    className="flex flex-wrap items-center gap-2"
+                    style={{ padding: '14px 16px', borderBottom: '2px solid var(--color-divider)' }}
+                >
                     <form className="flex flex-wrap items-center gap-2">
-                        <select name="status" defaultValue={status} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="status" defaultValue={status} className="input" style={{ width: 150 }}>
                             <option value="">Всички статуси</option>
                             <option value="submitted">подадена</option>
                             <option value="confirmed">потвърдена</option>
@@ -126,17 +133,15 @@ export default async function FormOrdersPage({
                             <option value="delivered">доставена</option>
                             <option value="cancelled">отказана</option>
                         </select>
-                        <select name="sku" defaultValue={sku} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="sku" defaultValue={sku} className="input" style={{ width: 150 }}>
                             <option value="">Всички продукти</option>
                             {skus.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <select name="size" defaultValue={size} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="size" defaultValue={size} className="input" style={{ width: 140 }}>
                             <option value="">Всички размери</option>
                             {sizesInOrders.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <button type="submit" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-                            Филтрирай
-                        </button>
+                        <button type="submit" className="btn btn-secondary">Филтрирай</button>
                     </form>
                 </div>
                 <OrdersTable orders={toPlain<OrderRowData[]>(orders)} />

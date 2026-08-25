@@ -40,9 +40,6 @@ export function dimensionLabel(key: string): string {
     return DIMENSION_LABELS[key] || key;
 }
 
-const inputCls =
-    'w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400';
-
 const ProductEditor = ({ initial }: { initial?: SerializedProduct }) => {
     const router = useRouter();
     const [sku, setSku] = useState(initial?.sku ?? '');
@@ -165,206 +162,227 @@ const ProductEditor = ({ initial }: { initial?: SerializedProduct }) => {
     };
 
     return (
-        <div className="p-6 max-w-5xl">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-                {initial ? `Редакция: ${initial.name}` : 'Нов продукт'}
-            </h1>
+        <div className="flex flex-col gap-6">
+            <div>
+                <h6>Каталог</h6>
+                <h3 style={{ margin: 0 }}>{initial ? `Редакция: ${initial.name}` : 'Нов продукт'}</h3>
+            </div>
 
-            {errors._ && <p className="mb-4 text-red-600 font-medium">{errors._}</p>}
+            {errors._ && <p className="field-error" style={{ margin: 0 }}>{errors._}</p>}
 
-            <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">SKU *</label>
-                        <input value={sku} onChange={e => setSku(e.target.value.toUpperCase())} className={inputCls} placeholder="TS-CLASSIC" />
-                        {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku}</p>}
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Категория *</label>
-                        <div className="flex gap-2">
-                            <select
-                                value={PRODUCT_CATEGORIES.includes(category as never) ? category : '__custom'}
-                                onChange={e => { if (e.target.value !== '__custom') setCategory(e.target.value); }}
-                                className={inputCls}
-                            >
-                                {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                <option value="__custom">друга…</option>
-                            </select>
-                            {!PRODUCT_CATEGORIES.includes(category as never) && (
-                                <input value={category} onChange={e => setCategory(e.target.value)} className={inputCls} placeholder="категория" />
-                            )}
+            <div className="panel">
+                <div className="panel-head">
+                    <h6>Основни данни</h6>
+                </div>
+                <div className="flex flex-col gap-4" style={{ padding: 16 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="field">
+                            <label>SKU (код на продукта) *</label>
+                            <input value={sku} onChange={e => setSku(e.target.value.toUpperCase())} className="input" placeholder="TS-CLASSIC" />
+                            {errors.sku && <p className="field-error">{errors.sku}</p>}
                         </div>
-                        {errors.category && <p className="text-sm text-red-600 mt-1">{errors.category}</p>}
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Име *</label>
-                    <input value={name} onChange={e => setName(e.target.value)} className={inputCls} />
-                    {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Описание</label>
-                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className={inputCls} />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Базова цена (EUR) *</label>
-                        <input value={basePrice} onChange={e => setBasePrice(e.target.value)} className={inputCls} placeholder="18.00" inputMode="decimal" />
-                        {errors.basePrice && <p className="text-sm text-red-600 mt-1">{errors.basePrice}</p>}
-                    </div>
-                    <div className="flex items-end pb-2">
-                        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                            <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-4 h-4" />
-                            Активен (вижда се при създаване на форми)
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Снимки (URL адреси)</label>
-                    <div className="space-y-2">
-                        {images.map((url, i) => (
-                            <div key={i} className="flex gap-2">
-                                <input
-                                    value={url}
-                                    onChange={e => setImages(images.map((u, j) => (j === i ? e.target.value : u)))}
-                                    className={inputCls}
-                                    placeholder="https://..."
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setImages(images.filter((_, j) => j !== i))}
-                                    className="px-3 text-slate-400 hover:text-red-500"
-                                    title="Премахни"
+                        <div className="field">
+                            <label>Категория *</label>
+                            <div className="flex gap-2">
+                                <select
+                                    value={PRODUCT_CATEGORIES.includes(category as never) ? category : '__custom'}
+                                    onChange={e => { if (e.target.value !== '__custom') setCategory(e.target.value); }}
+                                    className="input"
                                 >
-                                    ✕
+                                    {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    <option value="__custom">друга…</option>
+                                </select>
+                                {!PRODUCT_CATEGORIES.includes(category as never) && (
+                                    <input value={category} onChange={e => setCategory(e.target.value)} className="input" placeholder="категория" />
+                                )}
+                            </div>
+                            {errors.category && <p className="field-error">{errors.category}</p>}
+                        </div>
+                    </div>
+
+                    <div className="field">
+                        <label>Име *</label>
+                        <input value={name} onChange={e => setName(e.target.value)} className="input" />
+                        {errors.name && <p className="field-error">{errors.name}</p>}
+                    </div>
+
+                    <div className="field">
+                        <label>Описание</label>
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="input" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="field">
+                            <label>Базова цена (EUR) *</label>
+                            <input value={basePrice} onChange={e => setBasePrice(e.target.value)} className="input" placeholder="18.00" inputMode="decimal" />
+                            {errors.basePrice && <p className="field-error">{errors.basePrice}</p>}
+                        </div>
+                        <div className="flex items-end" style={{ paddingBottom: 6 }}>
+                            <label className="flex items-center gap-2" style={{ fontSize: 13, cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={e => setIsActive(e.target.checked)}
+                                    style={{ width: 16, height: 16, accentColor: 'var(--color-accent)' }}
+                                />
+                                Активен (вижда се при създаване на форми)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="field">
+                        <label>Снимки (URL адреси)</label>
+                        <div className="flex flex-col gap-2">
+                            {images.map((url, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <input
+                                        value={url}
+                                        onChange={e => setImages(images.map((u, j) => (j === i ? e.target.value : u)))}
+                                        className="input"
+                                        placeholder="https://..."
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setImages(images.filter((_, j) => j !== i))}
+                                        className="btn btn-ghost"
+                                        title="Премахни"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                            <div>
+                                <button type="button" onClick={() => setImages([...images, ''])} className="btn btn-ghost" style={{ fontSize: 13 }}>
+                                    + Добави снимка
                                 </button>
                             </div>
-                        ))}
-                        <button type="button" onClick={() => setImages([...images, ''])} className="text-sm text-blue-700 hover:underline">
-                            + Добави снимка
-                        </button>
-                        {errors.images && <p className="text-sm text-red-600">{errors.images}</p>}
+                            {errors.images && <p className="field-error">{errors.images}</p>}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* ── Size chart editor ── */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Таблица с размери</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                    Колоните са измерения (в см), редовете са размери. Празни клетки са позволени.
-                </p>
-
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <span className="text-sm font-bold text-slate-700">Измерения:</span>
-                    {dimensions.map(d => (
-                        <span key={d} className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 text-sm px-3 py-1 rounded-full">
-                            {dimensionLabel(d)}
-                            <button type="button" onClick={() => removeDimension(d)} className="text-slate-400 hover:text-red-500" title="Премахни колоната">
-                                ✕
-                            </button>
-                        </span>
-                    ))}
-                    <select
-                        value=""
-                        onChange={e => { if (e.target.value) { setNewDimension(''); setDimensions(prev => prev.includes(e.target.value) ? prev : [...prev, e.target.value]); } }}
-                        className="border-2 border-slate-300 rounded-lg px-2 py-1 text-sm text-slate-700"
-                    >
-                        <option value="">+ колона…</option>
-                        {Object.entries(DIMENSION_LABELS).filter(([k]) => !dimensions.includes(k)).map(([k, label]) => (
-                            <option key={k} value={k}>{label}</option>
-                        ))}
-                    </select>
-                    <input
-                        value={newDimension}
-                        onChange={e => setNewDimension(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addDimension(); } }}
-                        placeholder="друг ключ (латиница)"
-                        className="border-2 border-slate-300 rounded-lg px-2 py-1 text-sm w-44"
-                    />
-                    <button type="button" onClick={addDimension} className="text-sm text-blue-700 hover:underline">добави</button>
+            <div className="panel">
+                <div className="panel-head">
+                    <h6>Таблица с размери</h6>
                 </div>
-                {errors.dimensions && <p className="text-sm text-red-600 mb-2">{errors.dimensions}</p>}
+                <div className="flex flex-col gap-4" style={{ padding: 16 }}>
+                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
+                        Колоните са измервания в см, редовете са размери. Празни клетки са позволени.
+                    </p>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-left">
-                                <th className="py-2 px-3 font-medium w-8"></th>
-                                <th className="py-2 px-3 font-medium">Размер</th>
-                                {dimensions.map(d => (
-                                    <th key={d} className="py-2 px-3 font-medium whitespace-nowrap">{dimensionLabel(d)} (см)</th>
-                                ))}
-                                <th className="py-2 px-3 font-medium whitespace-nowrap">Корекция на цена (€)</th>
-                                <th className="py-2 px-3 w-8"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sizes.map((row, i) => (
-                                <tr key={i} className="border-b border-gray-100">
-                                    <td className="py-1 px-1 whitespace-nowrap">
-                                        <button type="button" onClick={() => moveSizeRow(i, -1)} className="text-slate-400 hover:text-slate-700 px-1" title="Нагоре">↑</button>
-                                        <button type="button" onClick={() => moveSizeRow(i, 1)} className="text-slate-400 hover:text-slate-700 px-1" title="Надолу">↓</button>
-                                    </td>
-                                    <td className="py-1 px-2">
-                                        <input
-                                            value={row.label}
-                                            onChange={e => setSizeField(i, { label: e.target.value })}
-                                            className="w-24 border border-slate-300 rounded px-2 py-1 font-semibold"
-                                            placeholder="M"
-                                        />
-                                    </td>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span style={{ fontSize: 12, fontWeight: 600 }}>Измервания:</span>
+                        {dimensions.map(d => (
+                            <span key={d} className="tag tag-accent" style={{ gap: 6 }}>
+                                {dimensionLabel(d)}
+                                <button
+                                    type="button"
+                                    onClick={() => removeDimension(d)}
+                                    title="Премахни колоната"
+                                    style={{ background: 'none', border: 0, cursor: 'pointer', color: 'inherit', font: 'inherit', padding: 0 }}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        ))}
+                        <select
+                            value=""
+                            onChange={e => { if (e.target.value) { setNewDimension(''); setDimensions(prev => prev.includes(e.target.value) ? prev : [...prev, e.target.value]); } }}
+                            className="input"
+                            style={{ width: 'auto', minHeight: 32, fontSize: 13 }}
+                        >
+                            <option value="">+ колона…</option>
+                            {Object.entries(DIMENSION_LABELS).filter(([k]) => !dimensions.includes(k)).map(([k, label]) => (
+                                <option key={k} value={k}>{label}</option>
+                            ))}
+                        </select>
+                        <input
+                            value={newDimension}
+                            onChange={e => setNewDimension(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addDimension(); } }}
+                            placeholder="друг ключ (латиница)"
+                            className="input"
+                            style={{ width: 176, minHeight: 32, fontSize: 13 }}
+                        />
+                        <button type="button" onClick={addDimension} className="btn btn-ghost" style={{ fontSize: 13 }}>добави</button>
+                    </div>
+                    {errors.dimensions && <p className="field-error" style={{ margin: 0 }}>{errors.dimensions}</p>}
+
+                    <div className="overflow-x-auto">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th style={{ width: 56 }}></th>
+                                    <th>Размер</th>
                                     {dimensions.map(d => (
-                                        <td key={d} className="py-1 px-2">
+                                        <th key={d} style={{ whiteSpace: 'nowrap' }}>{dimensionLabel(d)} (см)</th>
+                                    ))}
+                                    <th style={{ whiteSpace: 'nowrap' }}>Корекция на цена (€)</th>
+                                    <th style={{ width: 40 }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sizes.map((row, i) => (
+                                    <tr key={i}>
+                                        <td style={{ whiteSpace: 'nowrap' }}>
+                                            <button type="button" onClick={() => moveSizeRow(i, -1)} className="btn btn-ghost" style={{ padding: '2px 4px' }} title="Нагоре">↑</button>
+                                            <button type="button" onClick={() => moveSizeRow(i, 1)} className="btn btn-ghost" style={{ padding: '2px 4px' }} title="Надолу">↓</button>
+                                        </td>
+                                        <td>
                                             <input
-                                                value={row.measurements[d] ?? ''}
-                                                onChange={e => setMeasurement(i, d, e.target.value)}
-                                                className="w-20 border border-slate-300 rounded px-2 py-1"
+                                                value={row.label}
+                                                onChange={e => setSizeField(i, { label: e.target.value })}
+                                                className="input"
+                                                style={{ width: 88, minHeight: 32, fontWeight: 600 }}
+                                                placeholder="M"
+                                            />
+                                        </td>
+                                        {dimensions.map(d => (
+                                            <td key={d}>
+                                                <input
+                                                    value={row.measurements[d] ?? ''}
+                                                    onChange={e => setMeasurement(i, d, e.target.value)}
+                                                    className="input"
+                                                    style={{ width: 76, minHeight: 32 }}
+                                                    inputMode="decimal"
+                                                />
+                                            </td>
+                                        ))}
+                                        <td>
+                                            <input
+                                                value={row.priceAdjustment}
+                                                onChange={e => setSizeField(i, { priceAdjustment: e.target.value })}
+                                                className="input"
+                                                style={{ width: 88, minHeight: 32 }}
+                                                placeholder="+2.00"
                                                 inputMode="decimal"
                                             />
                                         </td>
-                                    ))}
-                                    <td className="py-1 px-2">
-                                        <input
-                                            value={row.priceAdjustment}
-                                            onChange={e => setSizeField(i, { priceAdjustment: e.target.value })}
-                                            className="w-24 border border-slate-300 rounded px-2 py-1"
-                                            placeholder="+2.00"
-                                            inputMode="decimal"
-                                        />
-                                    </td>
-                                    <td className="py-1 px-2">
-                                        <button type="button" onClick={() => removeSizeRow(i)} className="text-slate-400 hover:text-red-500" title="Премахни реда">✕</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        <td>
+                                            <button type="button" onClick={() => removeSizeRow(i)} className="btn btn-ghost" style={{ padding: '2px 6px' }} title="Премахни реда">✕</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div className="flex flex-wrap items-center gap-3 mt-3">
-                    <button type="button" onClick={() => addSizeRow()} className="text-sm text-blue-700 hover:underline">+ Добави размер</button>
-                    <span className="text-slate-300">|</span>
-                    <button type="button" onClick={() => addQuickSizes(QUICK_ADULT)} className="text-sm text-slate-600 hover:underline">+ възрастни ({QUICK_ADULT.join(', ')})</button>
-                    <button type="button" onClick={() => addQuickSizes(QUICK_KIDS)} className="text-sm text-slate-600 hover:underline">+ детски ({QUICK_KIDS.join(', ')})</button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={() => addSizeRow()} className="btn btn-ghost" style={{ fontSize: 13 }}>+ Добави размер</button>
+                        <button type="button" onClick={() => addQuickSizes(QUICK_ADULT)} className="btn btn-ghost" style={{ fontSize: 13 }}>+ възрастни ({QUICK_ADULT.join(', ')})</button>
+                        <button type="button" onClick={() => addQuickSizes(QUICK_KIDS)} className="btn btn-ghost" style={{ fontSize: 13 }}>+ детски ({QUICK_KIDS.join(', ')})</button>
+                    </div>
+                    {errors.sizes && <p className="field-error" style={{ margin: 0 }}>{errors.sizes}</p>}
                 </div>
-                {errors.sizes && <p className="text-sm text-red-600 mt-2">{errors.sizes}</p>}
             </div>
 
-            <div className="flex items-center gap-3 mt-6">
-                <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-6 py-3 bg-yellow-400 text-slate-800 font-bold rounded-lg hover:bg-yellow-500 disabled:opacity-60"
-                >
+            <div className="flex items-center gap-2">
+                <button type="button" onClick={handleSave} disabled={saving} className="btn btn-primary">
                     {saving ? 'Запазване…' : 'Запази'}
                 </button>
-                <button type="button" onClick={() => router.push('/admin/products')} className="px-6 py-3 border border-slate-300 rounded-lg hover:bg-gray-50">
+                <button type="button" onClick={() => router.push('/admin/products')} className="btn btn-secondary">
                     Отказ
                 </button>
                 {initial && (
@@ -372,7 +390,7 @@ const ProductEditor = ({ initial }: { initial?: SerializedProduct }) => {
                         type="button"
                         onClick={handleArchiveToggle}
                         disabled={saving}
-                        className="ml-auto px-6 py-3 border border-slate-300 text-slate-600 rounded-lg hover:bg-gray-50"
+                        className="btn btn-secondary ml-auto"
                     >
                         {isActive ? 'Архивирай' : 'Възстанови'}
                     </button>

@@ -17,17 +17,27 @@ const FormRowActions = ({ formId, status }: { formId: string; status: 'draft' | 
         }
     };
 
-    const btn = 'text-sm px-3 py-1 rounded-lg border border-slate-300 hover:bg-gray-100 disabled:opacity-50';
+    const btnStyle: React.CSSProperties = { fontSize: 12, padding: '5px 10px', whiteSpace: 'nowrap' };
 
     return (
         <div className="flex items-center gap-2 whitespace-nowrap">
             {status !== 'open' && (
-                <button disabled={busy} onClick={() => run(() => setFormStatus(formId, 'open'))} className={`${btn} text-green-700 border-green-300`}>
+                <button
+                    disabled={busy}
+                    onClick={() => run(() => setFormStatus(formId, 'open'))}
+                    className="btn btn-secondary"
+                    style={{ ...btnStyle, color: '#2e7d4f' }}
+                >
                     Отвори
                 </button>
             )}
             {status === 'open' && (
-                <button disabled={busy} onClick={() => run(() => setFormStatus(formId, 'closed'))} className={`${btn} text-red-700 border-red-300`}>
+                <button
+                    disabled={busy}
+                    onClick={() => run(() => setFormStatus(formId, 'closed'))}
+                    className="btn btn-secondary"
+                    style={{ ...btnStyle, color: 'var(--color-accent-700)' }}
+                >
                     Затвори
                 </button>
             )}
@@ -39,7 +49,8 @@ const FormRowActions = ({ formId, status }: { formId: string; status: 'draft' | 
                         if (res.ok) router.push(`/admin/forms/${res.id}`);
                     })
                 }
-                className={btn}
+                className="btn btn-ghost"
+                style={btnStyle}
             >
                 Дублирай
             </button>

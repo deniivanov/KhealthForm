@@ -33,47 +33,42 @@ const LoginPage = () => {
         // Only allow relative redirects to avoid open-redirect abuse
         const target = callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
             ? callbackUrl
-            : '/admin/summary';
+            : '/admin';
         router.push(target);
         router.refresh();
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-lg border border-slate-200 p-8">
-                <h1 className="text-2xl font-bold text-slate-800 mb-6 text-center">Вход за администратор</h1>
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Имейл</label>
+        <div className="modernist min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--color-neutral-200)' }}>
+            <div className="w-full max-w-[400px] panel elev-md" style={{ padding: '28px 24px 24px' }}>
+                <h6>KHealth Админ</h6>
+                <h3 style={{ marginBottom: 20 }}>Вход</h3>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="field">
+                        <label>Имейл</label>
                         <input
+                            className="input"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             autoComplete="username"
-                            className="w-full border-2 border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-slate-800 font-medium"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Парола</label>
+                    <div className="field">
+                        <label>Парола</label>
                         <input
+                            className="input"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             autoComplete="current-password"
-                            className="w-full border-2 border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-slate-800 font-medium"
                         />
                     </div>
-                    {error && (
-                        <p className="text-sm text-red-600 font-medium">{error}</p>
-                    )}
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full py-3 rounded-lg font-bold text-base bg-yellow-400 text-slate-800 hover:bg-yellow-500 disabled:opacity-70 transition-all duration-200"
-                    >
-                        {isSubmitting ? 'Влизане...' : 'Вход'}
+                    {error && <p className="field-error" style={{ margin: 0 }}>{error}</p>}
+                    <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-block" style={{ minHeight: 44 }}>
+                        {isSubmitting ? 'Влизане…' : 'Влез'}
                     </button>
                 </form>
             </div>

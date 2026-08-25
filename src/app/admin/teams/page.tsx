@@ -43,90 +43,104 @@ export default async function TeamsPage({
     for (const c of counts) formCounts.set(String(c._id), c.count);
 
     return (
-        <div className="p-6">
-            <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-gray-900">Отбори</h1>
-                        <p className="text-gray-600 mt-1">{teams.length} отбора</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <form className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                name="q"
-                                defaultValue={q}
-                                placeholder="Търсене..."
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <button type="submit" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                Търси
-                            </button>
-                        </form>
-                        <Link
-                            href="/admin/teams/new"
-                            className="px-4 py-2 bg-yellow-400 text-slate-800 font-bold rounded-lg hover:bg-yellow-500 whitespace-nowrap"
-                        >
-                            + Нов отбор
-                        </Link>
-                    </div>
+        <div className="panel">
+            <div className="page-head">
+                <div>
+                    <h6>Клиенти</h6>
+                    <h3 style={{ margin: 0 }}>Отбори</h3>
+                    <p className="text-muted">{teams.length} отбора — клиентите, за които създавате форми за поръчки.</p>
                 </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-left text-gray-900">
-                                <th className="py-3 px-6 font-medium">Отбор</th>
-                                <th className="py-3 px-6 font-medium">Slug</th>
-                                <th className="py-3 px-6 font-medium">Контакт</th>
-                                <th className="py-3 px-6 font-medium">Брандинг</th>
-                                <th className="py-3 px-6 font-medium">Форми</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {teams.map(t => (
-                                <tr key={t._id} className="border-b border-gray-100 hover:bg-gray-50">
-                                    <td className="py-3 px-6">
-                                        <Link href={`/admin/teams/${t._id}`} className="flex items-center gap-3 font-medium text-gray-900 hover:underline">
-                                            {t.logoUrl ? (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={t.logoUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
-                                            ) : (
-                                                <span className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
-                                                    {t.name.slice(0, 2).toUpperCase()}
-                                                </span>
-                                            )}
-                                            {t.name}
-                                        </Link>
-                                    </td>
-                                    <td className="py-3 px-6 font-mono text-sm text-gray-600">{t.slug}</td>
-                                    <td className="py-3 px-6 text-gray-600">
-                                        {t.contactName || '—'}
-                                        {t.phone && <span className="text-gray-400"> · {t.phone}</span>}
-                                    </td>
-                                    <td className="py-3 px-6">
-                                        {t.brandColors ? (
-                                            <span className="inline-flex items-center gap-1">
-                                                <span className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: t.brandColors.primary }} />
-                                                {t.brandColors.secondary && (
-                                                    <span className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: t.brandColors.secondary }} />
-                                                )}
-                                            </span>
-                                        ) : (
-                                            <span className="text-gray-400">—</span>
-                                        )}
-                                    </td>
-                                    <td className="py-3 px-6 text-gray-600">{formCounts.get(t._id) ?? 0}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="flex flex-wrap items-center gap-2">
+                    <form className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            name="q"
+                            defaultValue={q}
+                            placeholder="Търсене…"
+                            className="input"
+                            style={{ width: 180 }}
+                        />
+                        <button type="submit" className="btn btn-secondary">Търси</button>
+                    </form>
+                    <Link href="/admin/teams/new" className="btn btn-primary">+ Нов отбор</Link>
                 </div>
-
-                {teams.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">Няма намерени отбори</div>
-                )}
             </div>
+
+            <div className="overflow-x-auto">
+                <table className="table">
+                    <thead>
+                        <tr>
+                            <th style={{ width: 56 }}></th>
+                            <th>Отбор</th>
+                            <th>Slug</th>
+                            <th>Контакт</th>
+                            <th>Брандинг</th>
+                            <th>Форми</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {teams.map(t => (
+                            <tr key={t._id}>
+                                <td>
+                                    {t.logoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={t.logoUrl} alt="" style={{ width: 40, height: 40, objectFit: 'cover' }} />
+                                    ) : (
+                                        <div
+                                            className="flex items-center justify-center"
+                                            style={{ width: 40, height: 40, background: 'var(--color-surface)', fontSize: 11, fontWeight: 700 }}
+                                        >
+                                            {t.name.slice(0, 2).toUpperCase()}
+                                        </div>
+                                    )}
+                                </td>
+                                <td>
+                                    <Link href={`/admin/teams/${t._id}`} className="row-link">{t.name}</Link>
+                                </td>
+                                <td>
+                                    <span className="text-muted" style={{ fontSize: 12, fontFamily: 'monospace' }}>{t.slug}</span>
+                                </td>
+                                <td className="text-muted">
+                                    {t.contactName || '—'}
+                                    {t.phone && <span> · {t.phone}</span>}
+                                </td>
+                                <td>
+                                    {t.brandColors ? (
+                                        <span className="inline-flex items-center gap-1">
+                                            <span
+                                                style={{
+                                                    width: 18, height: 18, display: 'inline-block',
+                                                    border: '1px solid var(--color-divider)',
+                                                    backgroundColor: t.brandColors.primary,
+                                                }}
+                                            />
+                                            {t.brandColors.secondary && (
+                                                <span
+                                                    style={{
+                                                        width: 18, height: 18, display: 'inline-block',
+                                                        border: '1px solid var(--color-divider)',
+                                                        backgroundColor: t.brandColors.secondary,
+                                                    }}
+                                                />
+                                            )}
+                                        </span>
+                                    ) : (
+                                        <span className="text-muted">—</span>
+                                    )}
+                                </td>
+                                <td className="text-muted">{formCounts.get(t._id) ?? 0}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {teams.length === 0 && (
+                <div className="empty">
+                    <p>{q ? 'Няма отбори, отговарящи на търсенето.' : 'Все още няма отбори.'}</p>
+                    {!q && <Link href="/admin/teams/new" className="btn btn-primary">Създай първия отбор</Link>}
+                </div>
+            )}
         </div>
     );
 }
