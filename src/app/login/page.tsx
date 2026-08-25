@@ -41,7 +41,10 @@ const LoginPage = () => {
     return (
         <div className="modernist min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--color-neutral-200)' }}>
             <div className="w-full max-w-[400px] panel elev-md" style={{ padding: '28px 24px 24px' }}>
-                <h6>KHealth Админ</h6>
+                <div style={{ marginBottom: 16 }}>
+                    <h3alth-logo mode="both" height="40" idle-every="6" />
+                </div>
+                <h6>Админ панел</h6>
                 <h3 style={{ marginBottom: 20 }}>Вход</h3>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="field">

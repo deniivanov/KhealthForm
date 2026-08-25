@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import AdminNav from "@/components/admin/AdminNav";
@@ -15,7 +16,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     return (
         <div className="modernist min-h-screen" style={{ background: 'var(--color-neutral-200)' }}>
             <div className="admin-nav">
-                <span className="admin-nav-brand">KHealth</span>
+                <Link href="/admin" className="admin-nav-brand flex items-center" aria-label="KHealth — начало">
+                    <h3alth-logo mode="both" height="34" idle-every="6" />
+                </Link>
                 <AdminNav />
                 <div className="ml-auto flex items-center gap-3 py-2">
                     <span className="text-muted hidden sm:inline" style={{ fontSize: 12 }}>{session.user.email}</span>

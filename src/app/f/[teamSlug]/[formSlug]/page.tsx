@@ -46,7 +46,8 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
     } as React.CSSProperties;
 
     const langToggle = (
-        <div className="text-center py-6">
+        <div className="text-center py-6 flex flex-col items-center gap-3">
+            <h3alth-logo mode="idle" height="22" idle-every="8" style={{ opacity: 0.55 }} />
             <Link
                 href={`?lang=${locale === 'bg' ? 'en' : 'bg'}`}
                 className="text-muted text-xs underline underline-offset-2"

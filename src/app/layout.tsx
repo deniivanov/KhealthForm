@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@/styles/modernist.css";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} antialiased`}
         >
         {children}
+        <Script src="/h3alth-logo.js" strategy="afterInteractive" />
         </body>
         </html>
     );
