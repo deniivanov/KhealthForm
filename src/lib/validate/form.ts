@@ -5,6 +5,8 @@ export interface FormItemInput {
     productId: string;
     /** euro string; empty = use catalog base price */
     priceOverride?: string | number | null;
+    /** per-form images; empty array = use catalog images */
+    images?: string[];
     /** size labels to offer; empty array = all catalog sizes */
     sizeLabels: string[];
     personalization: Array<{ key: string; label: string; type: string; required: boolean }>;
@@ -16,6 +18,7 @@ export interface FormInput {
     message?: string;
     opensAt?: string | null;
     closesAt?: string | null;
+    hidePrices: boolean;
     requireEmail: boolean;
     requirePhone: boolean;
     items: FormItemInput[];
@@ -27,10 +30,12 @@ export interface ValidatedFormInput {
     message?: string;
     opensAt?: Date;
     closesAt?: Date;
+    hidePrices: boolean;
     requiredMemberFields: { email: boolean; phone: boolean };
     items: Array<{
         productId: string;
         priceOverrideCents: number | null;
+        images: string[];
         sizeLabels: string[];
         personalization: PersonalizationField[];
     }>;
@@ -96,6 +101,17 @@ export function validateForm(input: FormInput): ValidationResult<ValidatedFormIn
             }
         }
 
+        const images = (Array.isArray(raw?.images) ? raw.images : [])
+            .map(u => String(u ?? '').trim())
+            .filter(Boolean)
+            .slice(0, 10);
+        for (const url of images) {
+            if (!/^(https:\/\/|\/)/.test(url)) {
+                errors.items = `Продукт ${i + 1}: снимките трябва да са https:// или / адреси`;
+                break;
+            }
+        }
+
         const sizeLabels = (Array.isArray(raw?.sizeLabels) ? raw.sizeLabels : [])
             .map(s => String(s ?? '').trim())
             .filter(Boolean)
@@ -119,7 +135,7 @@ export function validateForm(input: FormInput): ValidationResult<ValidatedFormIn
             personalization.push({ key, label, type, required: Boolean(field?.required) });
         }
 
-        items.push({ productId, priceOverrideCents, sizeLabels, personalization });
+        items.push({ productId, priceOverrideCents, images, sizeLabels, personalization });
     }
 
     if (Object.keys(errors).length > 0) return { ok: false, errors };
@@ -132,6 +148,7 @@ export function validateForm(input: FormInput): ValidationResult<ValidatedFormIn
             message,
             opensAt,
             closesAt,
+            hidePrices: Boolean(input.hidePrices),
             requiredMemberFields: { email: Boolean(input.requireEmail), phone: Boolean(input.requirePhone) },
             items,
         },

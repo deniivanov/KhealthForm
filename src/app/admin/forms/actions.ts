@@ -36,7 +36,7 @@ async function buildSnapshotItems(data: ValidatedFormInput): Promise<FormItemDat
             sku: product.sku,
             name: product.name,
             description: product.description,
-            images: product.images,
+            images: item.images.length ? item.images : product.images,
             priceCents: item.priceOverrideCents ?? product.basePriceCents,
             dimensions: product.dimensions,
             sizes: offered,
@@ -66,6 +66,7 @@ export async function createForm(input: FormInput): Promise<ActionResult> {
         opensAt: result.data.opensAt,
         closesAt: result.data.closesAt,
         message: result.data.message,
+        hidePrices: result.data.hidePrices,
         requiredMemberFields: result.data.requiredMemberFields,
         items,
     });
@@ -91,6 +92,7 @@ export async function updateForm(id: string, input: FormInput): Promise<ActionRe
         opensAt: result.data.opensAt ?? null,
         closesAt: result.data.closesAt ?? null,
         message: result.data.message ?? '',
+        hidePrices: result.data.hidePrices,
         requiredMemberFields: result.data.requiredMemberFields,
         items,
     });
@@ -122,6 +124,7 @@ export async function duplicateForm(id: string): Promise<ActionResult> {
         opensAt: undefined,
         closesAt: undefined,
         message: source.message,
+        hidePrices: source.hidePrices,
         requiredMemberFields: source.requiredMemberFields,
         items: source.items.map(({ _id, ...item }) => item),
     });

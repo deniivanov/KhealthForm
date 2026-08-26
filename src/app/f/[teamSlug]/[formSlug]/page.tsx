@@ -99,11 +99,21 @@ export default async function PublicFormPage({ params, searchParams }: PageProps
         );
     }
 
+    const plainForm = toPlain<PublicFormData>(form);
+    if (plainForm.hidePrices) {
+        // don't leak prices to the client at all — the UI hides them anyway
+        plainForm.items = plainForm.items.map(item => ({
+            ...item,
+            priceCents: 0,
+            sizes: item.sizes.map(s => ({ ...s, priceAdjustmentCents: 0 })),
+        }));
+    }
+
     return (
         <div className="modernist min-h-screen" style={{ ...brandStyle, background: 'var(--color-neutral-200)' }}>
             <PublicOrderForm
                 team={toPlain<PublicTeamData>(team)}
-                form={toPlain<PublicFormData>(form)}
+                form={plainForm}
                 locale={locale}
                 dict={dict}
                 deadline={form.closesAt ? formatDeadline(form.closesAt, locale) : null}

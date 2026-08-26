@@ -106,7 +106,8 @@ export async function submitPublicOrder(
                 .catch(() => {});
         }
 
-        return { ok: true, reference: order.reference, totalCents: priced.totalCents };
+        // hidden-price forms never expose the total to the member
+        return { ok: true, reference: order.reference, totalCents: form.hidePrices ? 0 : priced.totalCents };
     } catch (err) {
         console.error('public order failed:', err);
         return { ok: false, error: 'generic' };

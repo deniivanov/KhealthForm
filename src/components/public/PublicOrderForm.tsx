@@ -28,6 +28,7 @@ export interface PublicFormData {
     title: string;
     message?: string;
     closesAt?: string;
+    hidePrices?: boolean;
     requiredMemberFields: { email: boolean; phone: boolean };
     items: PublicFormItem[];
 }
@@ -102,6 +103,7 @@ const PublicOrderForm = ({
     const summaryRef = useRef<HTMLDivElement>(null);
 
     const fmt = (cents: number) => formatCents(cents, locale === 'bg' ? 'bg-BG' : 'en-IE');
+    const hidePrices = Boolean(form.hidePrices);
 
     const detail = form.items.find(i => i._id === detailId) ?? form.items[0] ?? null;
 
@@ -257,7 +259,7 @@ const PublicOrderForm = ({
                                 {success.reference}
                             </span>
                             <span className="card-meta">
-                                {dict.total} {fmt(success.totalCents)} · {dict.confirmationNote}
+                                {hidePrices ? dict.confirmationNote : `${dict.total} ${fmt(success.totalCents)} · ${dict.confirmationNote}`}
                             </span>
                         </div>
                         <button
@@ -330,7 +332,9 @@ const PublicOrderForm = ({
                                                 <span className="text-muted" style={{ fontSize: 11.5 }}>
                                                     {item.sizes[0]?.label}–{item.sizes[item.sizes.length - 1]?.label}
                                                 </span>
-                                                <span style={{ fontWeight: 600, fontSize: 13 }}>{fmt(item.priceCents)}</span>
+                                                {!hidePrices && (
+                                                    <span style={{ fontWeight: 600, fontSize: 13 }}>{fmt(item.priceCents)}</span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -366,9 +370,11 @@ const PublicOrderForm = ({
                                             </span>
                                         )}
                                     </div>
-                                    <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
-                                        {fmt(line.unitPriceCents * line.quantity)}
-                                    </span>
+                                    {!hidePrices && (
+                                        <span style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
+                                            {fmt(line.unitPriceCents * line.quantity)}
+                                        </span>
+                                    )}
                                     <button
                                         type="button"
                                         className="btn btn-secondary"
@@ -380,7 +386,7 @@ const PublicOrderForm = ({
                                     </button>
                                 </div>
                             ))}
-                            {cart.length > 0 && (
+                            {cart.length > 0 && !hidePrices && (
                                 <div
                                     style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 16, borderBottom: '2px solid var(--color-divider)' }}
                                 >
@@ -430,7 +436,7 @@ const PublicOrderForm = ({
                                 disabled={submitting}
                                 onClick={handleSubmit}
                             >
-                                {submitting ? dict.submitting : `${dict.submit} — ${fmt(totalCents)}`}
+                                {submitting ? dict.submitting : hidePrices ? dict.submit : `${dict.submit} — ${fmt(totalCents)}`}
                             </button>
                             <p className="text-muted" style={{ fontSize: 11, margin: '0 0 12px' }}>{dict.referenceNote}</p>
                         </div>
@@ -453,7 +459,7 @@ const PublicOrderForm = ({
                         <span>
                             {dict.reviewOrder} ({cartCount})
                         </span>
-                        <span>{fmt(totalCents)}</span>
+                        {!hidePrices && <span>{fmt(totalCents)}</span>}
                     </button>
                 </div>
             )}
@@ -504,9 +510,11 @@ const PublicOrderForm = ({
                                     {/* Title + price */}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 16 }}>
                                         <h3 style={{ margin: 0 }}>{detail.name}</h3>
-                                        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 20, whiteSpace: 'nowrap' }}>
-                                            {fmt(unit)}
-                                        </span>
+                                        {!hidePrices && (
+                                            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 20, whiteSpace: 'nowrap' }}>
+                                                {fmt(unit)}
+                                            </span>
+                                        )}
                                     </div>
                                     {detail.description && (
                                         <p className="text-muted" style={{ fontSize: 13, margin: '8px 0 16px' }}>{detail.description}</p>
@@ -535,7 +543,7 @@ const PublicOrderForm = ({
                                             </button>
                                         ))}
                                     </div>
-                                    {adjustedSizes.length > 0 && (
+                                    {adjustedSizes.length > 0 && !hidePrices && (
                                         <p className="text-muted" style={{ fontSize: 11.5, margin: '6px 0 0' }}>
                                             {adjustedSizes.map(s => `${s.label} ${dict.adds} ${fmt(s.priceAdjustmentCents!)}`).join(' · ')}
                                         </p>
@@ -605,7 +613,7 @@ const PublicOrderForm = ({
                                             style={{ flex: 1, minHeight: 44 }}
                                             onClick={() => addToCart(detail)}
                                         >
-                                            {dict.addToOrder} — {fmt(unit * sel.quantity)}
+                                            {hidePrices ? dict.addToOrder : `${dict.addToOrder} — ${fmt(unit * sel.quantity)}`}
                                         </button>
                                     </div>
                                 </div>

@@ -6,6 +6,7 @@ import { slugify } from '@/lib/slug';
 import type { FormInput } from '@/lib/validate/form';
 import { createForm, updateForm } from '@/app/admin/forms/actions';
 import type { ActionResult } from '@/app/admin/products/actions';
+import ImageUploadButton from '@/components/admin/ImageUploadButton';
 
 export interface PickerProduct {
     _id: string;
@@ -28,6 +29,8 @@ export interface EditorPersonalization {
 export interface EditorItem {
     productId: string;
     priceOverride: string;
+    /** images shown on this form; starts as a copy of the catalog images */
+    images: string[];
     sizeLabels: string[];
     personalization: EditorPersonalization[];
 }
@@ -40,10 +43,12 @@ export interface SerializedFormForEdit {
     message?: string;
     opensAt?: string;
     closesAt?: string;
+    hidePrices?: boolean;
     requiredMemberFields: { email: boolean; phone: boolean };
     items: Array<{
         productId: string;
         priceCents: number;
+        images: string[];
         sizes: Array<{ label: string }>;
         personalization: EditorPersonalization[];
     }>;
@@ -82,11 +87,13 @@ const FormEditor = ({
     const [closesAt, setClosesAt] = useState(toLocalInput(initial?.closesAt));
     const [requireEmail, setRequireEmail] = useState(initial?.requiredMemberFields?.email ?? false);
     const [requirePhone, setRequirePhone] = useState(initial?.requiredMemberFields?.phone ?? true);
+    const [hidePrices, setHidePrices] = useState(initial?.hidePrices ?? false);
 
     const [items, setItems] = useState<EditorItem[]>(
         initial?.items.map(item => ({
             productId: item.productId,
             priceOverride: centsToEuroString(item.priceCents),
+            images: item.images ?? [],
             sizeLabels: item.sizes.map(s => s.label),
             personalization: item.personalization ?? [],
         })) ?? []
@@ -111,6 +118,7 @@ const FormEditor = ({
             {
                 productId: product._id,
                 priceOverride: '',
+                images: [...product.images],
                 sizeLabels: product.sizes.map(s => s.label), // all offered by default
                 personalization: [],
             },
@@ -166,6 +174,7 @@ const FormEditor = ({
             message,
             opensAt: opensAt || null,
             closesAt: closesAt || null,
+            hidePrices,
             requireEmail,
             requirePhone,
             items: items.map(item => {
@@ -174,6 +183,7 @@ const FormEditor = ({
                 return {
                     productId: item.productId,
                     priceOverride: item.priceOverride,
+                    images: item.images,
                     sizeLabels: allSelected ? [] : item.sizeLabels,
                     personalization: item.personalization,
                 };
@@ -262,6 +272,16 @@ const FormEditor = ({
                             <input type="checkbox" checked={requireEmail} onChange={e => setRequireEmail(e.target.checked)} style={{ accentColor: 'var(--color-accent)' }} /> Имейл
                         </label>
                     </div>
+
+                    <div>
+                        <label className="flex items-center gap-2" style={{ fontSize: 13, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={hidePrices} onChange={e => setHidePrices(e.target.checked)} style={{ accentColor: 'var(--color-accent)' }} />
+                            Скрий цените от клиентите
+                        </label>
+                        <p className="text-muted" style={{ fontSize: 12, margin: '4px 0 0 24px' }}>
+                            Формата не показва цени на продуктите, нито обща сума. Поръчките пак се записват с цени в администрацията.
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -281,10 +301,10 @@ const FormEditor = ({
                             <div key={item.productId} style={{ border: '1px solid var(--color-divider)', padding: 14 }}>
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex items-center gap-3">
-                                        {product.images[0] && (
+                                        {(item.images[0] || product.images[0]) && (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img
-                                                src={product.images[0]}
+                                                src={item.images[0] || product.images[0]}
                                                 alt=""
                                                 style={{ width: 48, height: 48, objectFit: 'cover', border: '1px solid var(--color-divider)' }}
                                             />
@@ -351,6 +371,56 @@ const FormEditor = ({
                                             })}
                                         </div>
                                     </div>
+                                </div>
+
+                                <div className="field" style={{ marginTop: 12 }}>
+                                    <label>Снимки за тази форма</label>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {item.images.map((url, imgIdx) => (
+                                            <div key={`${url}-${imgIdx}`} style={{ position: 'relative' }}>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={url}
+                                                    alt=""
+                                                    style={{ width: 56, height: 56, objectFit: 'cover', border: '1px solid var(--color-divider)' }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => patchItem(i, { images: item.images.filter((_, j) => j !== imgIdx) })}
+                                                    title="Премахни снимката"
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: -6,
+                                                        right: -6,
+                                                        width: 18,
+                                                        height: 18,
+                                                        padding: 0,
+                                                        fontSize: 11,
+                                                        lineHeight: '16px',
+                                                        cursor: 'pointer',
+                                                        border: '1px solid var(--color-divider)',
+                                                        background: 'var(--color-bg)',
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <ImageUploadButton onUploaded={url => patchItem(i, { images: [...item.images, url] })} />
+                                        {JSON.stringify(item.images) !== JSON.stringify(product.images) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => patchItem(i, { images: [...product.images] })}
+                                                className="btn btn-ghost"
+                                                style={{ fontSize: 12 }}
+                                            >
+                                                ↺ от каталога
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-muted" style={{ fontSize: 11.5, margin: '4px 0 0' }}>
+                                        Виждат се само в тази форма — каталогът не се променя. Без снимки = снимките от каталога.
+                                    </p>
                                 </div>
 
                                 <div style={{ marginTop: 12 }}>

@@ -48,6 +48,8 @@ export interface FormData {
     closesAt?: Date;
     /** shown at the top of the public form (deadline, pickup info, …) */
     message?: string;
+    /** when true the public form shows no prices (per-item or totals) */
+    hidePrices: boolean;
     /** fullName is always required */
     requiredMemberFields: RequiredMemberFields;
     items: FormItemData[];
@@ -89,6 +91,7 @@ const FormSchema = new Schema<FormData>(
         opensAt: { type: Date },
         closesAt: { type: Date },
         message: { type: String, trim: true },
+        hidePrices: { type: Boolean, required: true, default: false },
         requiredMemberFields: {
             type: new Schema<RequiredMemberFields>(
                 {
