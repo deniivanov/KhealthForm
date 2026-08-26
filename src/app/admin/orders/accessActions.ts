@@ -66,3 +66,11 @@ export async function revokeOrderAccess(grantId: string): Promise<void> {
     await connectDB();
     await OrderAccess.findByIdAndUpdate(grantId, { revoked: true });
 }
+
+/** Remove a grant entirely (the email + code pair disappears from the list). */
+export async function deleteOrderAccess(grantId: string): Promise<void> {
+    await requireAdmin();
+    if (!isValidObjectId(grantId)) return;
+    await connectDB();
+    await OrderAccess.deleteOne({ _id: grantId });
+}

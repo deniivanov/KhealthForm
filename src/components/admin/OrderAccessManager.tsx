@@ -4,6 +4,7 @@ import {
     listOrderAccess,
     grantOrderAccess,
     revokeOrderAccess,
+    deleteOrderAccess,
     type AccessGrant,
 } from '@/app/admin/orders/accessActions';
 
@@ -55,6 +56,17 @@ const OrderAccessManager = ({ orderId }: { orderId: string }) => {
         setBusy(true);
         try {
             await revokeOrderAccess(grantId);
+            await reload();
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const remove = async (grant: AccessGrant) => {
+        if (!window.confirm(`Изтриване на достъпа за ${grant.email}? Кодът спира да работи.`)) return;
+        setBusy(true);
+        try {
+            await deleteOrderAccess(grant._id);
             await reload();
         } finally {
             setBusy(false);
@@ -128,6 +140,16 @@ const OrderAccessManager = ({ orderId }: { orderId: string }) => {
                                     спри достъпа
                                 </button>
                             )}
+                            <button
+                                type="button"
+                                onClick={() => remove(g)}
+                                disabled={busy}
+                                className="btn btn-ghost"
+                                style={{ fontSize: 12, color: 'var(--status-cancelled)' }}
+                                title="Изтрий записа — кодът спира да работи и редът изчезва"
+                            >
+                                ✕ изтрий
+                            </button>
                         </div>
                     ))}
                 </div>
