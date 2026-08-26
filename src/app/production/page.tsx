@@ -29,7 +29,7 @@ function formatDate(d: Date | string): string {
  */
 export default async function ProductionQueuePage() {
     const session = await auth();
-    if (!session?.user || session.user.role !== 'admin') {
+    if (!session?.user || !['admin', 'production'].includes(session.user.role ?? '')) {
         redirect('/login?callbackUrl=/production');
     }
 

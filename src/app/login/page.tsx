@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -33,7 +34,7 @@ const LoginPage = () => {
         // Only allow relative redirects to avoid open-redirect abuse
         const target = callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
             ? callbackUrl
-            : '/admin';
+            : '/account';
         router.push(target);
         router.refresh();
     };
@@ -74,6 +75,13 @@ const LoginPage = () => {
                         {isSubmitting ? 'Влизане…' : 'Влез'}
                     </button>
                 </form>
+                <p className="text-muted" style={{ fontSize: 13, marginTop: 16 }}>
+                    Нямате профил?{' '}
+                    <Link href="/register" style={{ color: 'var(--color-accent-700)' }}>Регистрация</Link>
+                    {' · '}
+                    Имате код за поръчка?{' '}
+                    <Link href="/order-access" style={{ color: 'var(--color-accent-700)' }}>Преглед на поръчка</Link>
+                </p>
             </div>
         </div>
     );

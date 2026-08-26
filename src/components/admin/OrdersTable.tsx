@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { formatCents } from '@/lib/money';
 import { setOrderStatus, setOrderPaymentStatus } from '@/app/admin/orders/actions';
 import type { OrderStatus, PaymentStatus } from '@/models/Order';
+import OrderAccessManager from '@/components/admin/OrderAccessManager';
 
 export interface OrderRowData {
     _id: string;
@@ -198,6 +199,7 @@ const OrdersTable = ({
                                                     Бележка от клиента: {order.notes}
                                                 </p>
                                             )}
+                                            <OrderAccessManager orderId={order._id} />
                                         </div>
                                     </td>
                                 </tr>

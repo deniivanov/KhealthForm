@@ -8,6 +8,7 @@ export const NAV_ITEMS = [
     { href: '/admin/teams', label: 'Отбори' },
     { href: '/admin/forms', label: 'Форми' },
     { href: '/admin/orders', label: 'Поръчки' },
+    { href: '/admin/users', label: 'Потребители' },
     { href: '/production', label: '📺 Производство' },
 ];
 
