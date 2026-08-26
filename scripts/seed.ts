@@ -39,12 +39,9 @@ async function seedAdmin() {
     }
 
     if (existing) {
-        if (passwordHash && existing.passwordHash !== passwordHash) {
-            await User.updateOne({ email }, { passwordHash });
-            console.log(`✔ admin user updated: ${email}`);
-        } else {
-            console.log(`✔ admin user exists: ${email}`);
-        }
+        // Never overwrite an existing password — it may have been changed
+        // from the admin settings page and the env hash would be stale.
+        console.log(`✔ admin user exists: ${email} (password untouched)`);
         return;
     }
 
