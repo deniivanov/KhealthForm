@@ -5,6 +5,7 @@ import { formatCents } from '@/lib/money';
 import { setOrderStatus, setOrderPaymentStatus } from '@/app/admin/orders/actions';
 import type { OrderStatus, PaymentStatus } from '@/models/Order';
 import OrderAccessManager from '@/components/admin/OrderAccessManager';
+import OrderLinesEditor from '@/components/admin/OrderLinesEditor';
 
 export interface OrderRowData {
     _id: string;
@@ -13,6 +14,7 @@ export interface OrderRowData {
     teamId: string;
     member: { fullName: string; email?: string; phone?: string };
     lines: Array<{
+        formItemId: string;
         productSku: string;
         productName: string;
         sizeLabel: string;
@@ -45,10 +47,13 @@ function formatDate(iso: string): string {
 const OrdersTable = ({
     orders,
     context,
+    summary,
 }: {
     orders: OrderRowData[];
     /** formId -> "Team / Form" label for the global view; omit on per-form pages */
     context?: Record<string, string>;
+    /** totals for the whole (filtered) set; defaults to the displayed rows — pass on paginated views */
+    summary?: { totalCents: number; quantity: number };
 }) => {
     const router = useRouter();
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -69,6 +74,12 @@ const OrdersTable = ({
         } finally {
             setBusyId(null);
         }
+    };
+
+    const active = orders.filter(o => o.status !== 'cancelled');
+    const totals = summary ?? {
+        totalCents: active.reduce((sum, o) => sum + o.totalCents, 0),
+        quantity: active.reduce((sum, o) => sum + o.lines.reduce((n, l) => n + l.quantity, 0), 0),
     };
 
     const togglePayment = async (id: string, current: PaymentStatus) => {
@@ -199,6 +210,15 @@ const OrdersTable = ({
                                                     Бележка от клиента: {order.notes}
                                                 </p>
                                             )}
+                                            <OrderLinesEditor
+                                                orderId={order._id}
+                                                initialLines={order.lines.map(l => ({
+                                                    formItemId: l.formItemId,
+                                                    sizeLabel: l.sizeLabel,
+                                                    quantity: l.quantity,
+                                                    personalization: l.personalization ?? {},
+                                                }))}
+                                            />
                                             <OrderAccessManager orderId={order._id} />
                                         </div>
                                     </td>
@@ -207,6 +227,18 @@ const OrdersTable = ({
                         </React.Fragment>
                     ))}
                 </tbody>
+                {orders.length > 0 && (
+                    <tfoot>
+                        <tr style={{ fontWeight: 700 }}>
+                            <td colSpan={context ? 4 : 3} style={{ borderTop: '2px solid var(--color-divider)' }}>
+                                ОБЩО (без отказаните)
+                            </td>
+                            <td style={{ borderTop: '2px solid var(--color-divider)' }}>{totals.quantity} бр.</td>
+                            <td style={{ borderTop: '2px solid var(--color-divider)' }}>{formatCents(totals.totalCents)}</td>
+                            <td colSpan={4} style={{ borderTop: '2px solid var(--color-divider)' }}></td>
+                        </tr>
+                    </tfoot>
+                )}
             </table>
             {orders.length === 0 && <div className="empty"><p>Няма намерени поръчки.</p></div>}
         </div>

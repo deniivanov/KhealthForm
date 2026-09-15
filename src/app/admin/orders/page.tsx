@@ -29,9 +29,15 @@ export default async function GlobalOrdersPage({
         Form.find().sort({ createdAt: -1 }).select('title teamId').lean(),
         Order.distinct('lines.productSku'),
         Order.distinct('lines.sizeLabel'),
-        Order.aggregate<{ _id: null; sum: number }>([
+        Order.aggregate<{ _id: null; sum: number; quantity: number }>([
             { $match: { ...filter, status: { $ne: 'cancelled' } } },
-            { $group: { _id: null, sum: { $sum: '$totalCents' } } },
+            {
+                $group: {
+                    _id: null,
+                    sum: { $sum: '$totalCents' },
+                    quantity: { $sum: { $sum: '$lines.quantity' } },
+                },
+            },
         ]),
     ]);
 
@@ -86,7 +92,11 @@ export default async function GlobalOrdersPage({
                 </form>
             </div>
 
-            <OrdersTable orders={toPlain<OrderRowData[]>(orders)} context={context} />
+            <OrdersTable
+                orders={toPlain<OrderRowData[]>(orders)}
+                context={context}
+                summary={{ totalCents: revenue[0]?.sum ?? 0, quantity: revenue[0]?.quantity ?? 0 }}
+            />
 
             {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-3 text-muted" style={{ padding: '14px 0', fontSize: 13 }}>
